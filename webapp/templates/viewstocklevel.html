@@ -1,0 +1,469 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stock Levels - Dragon Ricemill</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+  <style>
+    html { scroll-behavior: smooth; }
+    .dropdown:hover .dropdown-menu {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Add smooth transitions */
+    .transition-all {
+      transition: all 0.3s ease-in-out;
+    }
+
+    /* Add hover effects */
+    .hover-scale:hover {
+      transform: scale(1.02);
+    }
+
+    /* Add card shadow effects */
+    .card-shadow {
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      transition: box-shadow 0.3s ease-in-out;
+    }
+    
+    .card-shadow:hover {
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Fade in animation */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    /* Custom scrollbar */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen font-sans leading-relaxed">
+
+<header class="fixed top-0 right-0 h-screen w-56 bg-white shadow-lg flex flex-col z-50 border-l border-gray-200">
+  <div class="h-14 flex items-center justify-center border-b border-gray-200">
+    <a href="#" class="flex items-center space-x-2 select-none text-gray-900 font-bold text-lg tracking-wide">
+      <span class="text-yellow-500 text-2xl">🌾</span>
+      <span>Dragon Ricemill</span>
+    </a>
+  </div>
+
+  <nav class="flex-1 flex flex-col py-1 pr-1 overflow-y-auto scrollbar-hide">
+    <div class="px-2 py-1">
+      <span class="block text-1 text-gray-500 font-semibold mb-3">Welcome, {{ request.session.user_name }}!</span>
+      <a href="{% url 'dashboard' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 font-semibold hover:text-yellow-600 transition">
+        <i class="fas fa-home w-4 text-yellow-500"></i><span>Home</span>
+      </a>
+      <a href="{% url 'profile' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition text-gray-900">
+        <i class="fas fa-user-circle w-4 text-yellow-500"></i><span>Profile</span>
+      </a>
+    </div>
+    
+
+    {% if request.session.user_role == 'admin' %}
+    <div class="mb-2 px-2">
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Users</p>
+      <a href="{% url 'add_user' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+        <i class="fas fa-user-plus w-4 text-yellow-500"></i><span>Add User</span>
+      </a>
+      <a href="{% url 'edituser' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-user-edit w-4 text-yellow-500"></i><span>Edit User</span>
+      </a>
+      <a href="{% url 'user_account' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-user-circle w-4 text-yellow-500"></i><span>Customer</span>
+      </a>
+
+      
+
+      
+  <!-- New Create Customer Ledger Link -->
+  <a href="{% url 'customer_ledger_create' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+    <i class="fas fa-book w-4 text-yellow-500"></i><span>Create Customer Ledger</span>
+  </a>
+
+      <a href="{% url 'logs' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-file-alt w-4 text-yellow-500"></i><span>User Logs</span>
+      </a>
+      <!-- Delete Customer link (no user_id, so go to selection page) -->
+      
+    </div>
+{% endif %}
+    
+
+    <div class="mb-2 px-2">
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Transaction</p>
+      <a href="{% url 'allorder_history' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-truck-moving w-4 text-yellow-500"></i><span>All Orders History</span>
+      </a>
+      <a href="{% url 'payment_confirmation' 0 %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-truck-moving w-4 text-yellow-500"></i><span>Payment Confirmation</span>
+      </a>
+      <a href="{% url 'delivery_confirmation' 0 %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-truck-moving w-4 text-yellow-500"></i><span>Delivery Confirmation</span>
+      </a>
+    </div>
+
+    
+    {% if request.session.user_role == 'admin' or request.session.user_role == 'employee' %}
+    <div class="mb-2 px-2">
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Inventory</p>
+      <a href="{% url 'addstock' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+        <i class="fas fa-boxes w-4 text-yellow-500"></i><span>Inventory</span>
+      </a>
+      <a href="{% url 'viewstocklevel' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-layer-group w-4 text-yellow-500"></i><span>View Levels</span>
+      </a>
+    </div>
+    {% endif %}
+
+    {% if request.session.user_role == 'admin' or request.session.user_role == 'cashier' %}
+
+<div class="mb-2 px-2">
+  <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Sales</p>
+  <a href="{% url 'new_sale' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+    <i class="fas fa-cart-plus w-4 text-yellow-500"></i><span>New Sale</span>
+  </a>
+  <a href="{% url 'invoice' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+    <i class="fas fa-file-invoice w-4 text-yellow-500"></i><span>Create Invoice</span>
+  </a>
+  
+  <a href="{% url 'view_sales_report' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+    <i class="fas fa-chart-line w-4 text-yellow-500"></i><span>Report</span>
+  </a>
+  <a href="{% url 'inventory_turnover' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+    <i class="fas fa-sync-alt w-4 text-yellow-500"></i><span>Inventory Turnover</span>
+  </a>
+</div>
+  {% endif %}
+
+
+
+    <div class="border-t border-gray-200 mt-auto px-2 py-4">
+      <a href="{% url 'logout' %}" onclick="return confirm('Logout?');" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-red-100 hover:text-red-600 transition font-semibold text-red-500 mt-2">
+        <i class="fas fa-sign-out-alt w-4"></i><span>Logout</span>
+      </a>
+    
+    </div>
+  </nav>
+</header>
+
+
+<!-- Main Content -->
+<div class="mr-56 min-h-screen bg-gray-50 fade-in">
+  <main class="max-w-7xl mx-auto px-6 py-8">
+    <!-- Page Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">Stock Levels</h1>
+      <p class="mt-2 text-sm text-gray-600">Monitor and manage your rice inventory levels</p>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="bg-white rounded-xl p-6 card-shadow hover-scale">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-600">Total Stock Types</p>
+            <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ total_stock_count }}</h3>
+          </div>
+          <div class="bg-blue-100 p-3 rounded-lg">
+            <i class="fas fa-boxes text-blue-600"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl p-6 card-shadow hover-scale">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-600">Low Stock Items</p>
+            <h3 class="text-2xl font-bold text-yellow-600 mt-1">
+              {{ low_stock_count }}
+            </h3>
+          </div>
+          <div class="bg-yellow-100 p-3 rounded-lg">
+            <i class="fas fa-exclamation-triangle text-yellow-600"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl p-6 card-shadow hover-scale">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-600">Out of Stock</p>
+            <h3 class="text-2xl font-bold text-red-600 mt-1">
+              {{ out_of_stock_count }}
+            </h3>
+          </div>
+          <div class="bg-red-100 p-3 rounded-lg">
+            <i class="fas fa-times-circle text-red-600"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl p-6 card-shadow hover-scale">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-600">In Stock</p>
+            <h3 class="text-2xl font-bold text-green-600 mt-1">
+              {{ in_stock_count }}
+            </h3>
+          </div>
+          <div class="bg-green-100 p-3 rounded-lg">
+            <i class="fas fa-check-circle text-green-600"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="bg-white rounded-xl p-6 mb-8 card-shadow">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">Filter Stock</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+          <div class="relative">
+            <input id="searchInput" type="text" placeholder="Search rice type..."
+                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all" />
+            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Min Price</label>
+          <div class="relative">
+            <input id="minPrice" type="number" placeholder="₱0"
+                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all" min="0" />
+            <i class="fas fa-peso-sign absolute left-3 top-3 text-gray-400"></i>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Max Price</label>
+          <div class="relative">
+            <input id="maxPrice" type="number" placeholder="₱999999"
+                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all" min="0" />
+            <i class="fas fa-peso-sign absolute left-3 top-3 text-gray-400"></i>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Rice Type</label>
+          <select id="riceTypeFilter"
+                  class="w-full py-2 pl-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all">
+            <option value="">All Types</option>
+            {% for rice_type in rice_types %}
+              <option value="{{ rice_type|lower }}">{{ rice_type }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Packaging</label>
+          <select id="packagingFilter"
+                  class="w-full py-2 pl-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all">
+            <option value="">All Packaging</option>
+            {% for packaging in packaging_types %}
+              <option value="{{ packaging }}">{{ packaging }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+          <select id="statusFilter"
+                  class="w-full py-2 pl-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all">
+            <option value="">All Status</option>
+            <option value="in stock">In Stock</option>
+            <option value="low stock">Low Stock</option>
+            <option value="out of stock">Out of Stock</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+      <div class="overflow-x-auto custom-scrollbar">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rice Type</th>
+              <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Packaging</th>
+              <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Current Stock</th>
+              <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Stock In</th>
+              <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Out</th>
+              <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Price/Sack</th>
+              <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Last Updated</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            {% for rice in stock_data %}
+              <tr class="hover:bg-gray-50 transition-all">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-yellow-100">
+                      <i class="fas fa-seedling text-yellow-600"></i>
+                    </div>
+                    <div class="ml-4">
+                      <div class="text-sm font-medium text-gray-900 rice-type">{{ rice.rice_type.rice_type }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">{{ rice.packaging }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-center">
+                  <span class="text-sm font-medium {% if rice.current_stock == 0 %}text-red-600{% elif rice.current_stock <= 100 %}text-yellow-600{% else %}text-green-600{% endif %}">
+                    {{ rice.current_stock }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">{{ rice.stock_in }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">{{ rice.stock_out }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-center text-sm price">₱{{ rice.price_per_sack|floatformat:2|intcomma }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-center status">
+                  {% if rice.current_stock == 0 %}
+                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                      Out of Stock
+                    </span>
+                  {% elif rice.current_stock <= 100 %}
+                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                      Low Stock
+                    </span>
+                  {% else %}
+                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                      In Stock
+                    </span>
+                  {% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                  {{ rice.last_updated|date:"M d, Y - g:i A" }}
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="8" class="px-6 py-10 text-center text-gray-500">
+                  <div class="flex flex-col items-center justify-center">
+                    <i class="fas fa-box-open text-4xl text-gray-400 mb-3"></i>
+                    <p class="text-lg font-medium">No stock data available</p>
+                    <p class="text-sm text-gray-400">Try adjusting your filters or add new stock</p>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const searchInput = document.getElementById("searchInput");
+const minPrice = document.getElementById("minPrice");
+const maxPrice = document.getElementById("maxPrice");
+const riceTypeFilter = document.getElementById("riceTypeFilter");
+const packagingFilter = document.getElementById("packagingFilter");
+const statusFilter = document.getElementById("statusFilter");
+
+const rows = document.querySelectorAll("tbody tr");
+
+function filterTable() {
+  const query = searchInput.value.toLowerCase();
+  const min = parseFloat(minPrice.value) || 0;
+  const max = parseFloat(maxPrice.value) || Infinity;
+  const selectedRiceType = riceTypeFilter.value.toLowerCase();
+  const selectedPackaging = packagingFilter.value.toLowerCase();
+  const selectedStatus = statusFilter.value.toLowerCase();
+
+  rows.forEach(row => {
+    const type = row.querySelector(".rice-type")?.textContent.toLowerCase() || "";
+    const priceText = row.querySelector(".price")?.textContent.replace(/[^0-9.-]+/g,"") || "0";
+    const price = parseFloat(priceText);
+    const statusText = row.querySelector(".status")?.textContent.toLowerCase() || "";
+    const packaging = row.querySelector("td:nth-child(2)")?.textContent.toLowerCase() || "";
+
+    const matchesType = !selectedRiceType || type.includes(selectedRiceType);
+    const matchesPackaging = !selectedPackaging || packaging.includes(selectedPackaging);
+    const matchesStatus = !selectedStatus || statusText.includes(selectedStatus);
+    const matchesQuery = type.includes(query);
+    const matchesPrice = price >= min && price <= max;
+
+    if (matchesQuery && matchesPrice && matchesType && matchesPackaging && matchesStatus) {
+      row.style.display = "";
+      row.classList.add("fade-in");
+    } else {
+      row.style.display = "none";
+      row.classList.remove("fade-in");
+    }
+  });
+}
+
+// Attach event listeners with debounce
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+const debouncedFilter = debounce(filterTable, 300);
+
+searchInput.addEventListener("input", debouncedFilter);
+minPrice.addEventListener("input", debouncedFilter);
+maxPrice.addEventListener("input", debouncedFilter);
+riceTypeFilter.addEventListener("change", filterTable);
+packagingFilter.addEventListener("change", filterTable);
+statusFilter.addEventListener("change", filterTable);
+
+// Initialize tooltips
+const tooltips = document.querySelectorAll('[data-tooltip]');
+tooltips.forEach(tooltip => {
+  tooltip.addEventListener('mouseenter', e => {
+    const tip = document.createElement('div');
+    tip.className = 'absolute bg-gray-900 text-white text-xs rounded py-1 px-2 -mt-8';
+    tip.textContent = e.target.dataset.tooltip;
+    e.target.appendChild(tip);
+  });
+  
+  tooltip.addEventListener('mouseleave', e => {
+    const tip = e.target.querySelector('div');
+    if (tip) tip.remove();
+  });
+});
+</script>
+
+</body>
+</html>

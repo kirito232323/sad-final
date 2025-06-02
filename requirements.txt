@@ -1,0 +1,6 @@
+Django==5.2
+pymysql
+mysqlclient
+gunicorn
+pytz
+xhtml2pdf

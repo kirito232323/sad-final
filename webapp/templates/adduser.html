@@ -1,0 +1,320 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Add User - Dragon Ricemill</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+  <style>
+    html { scroll-behavior: smooth; }
+    .dropdown:hover .dropdown-menu {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    .form-input:focus {
+      box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.2);
+      border-color: #EAB308;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen font-sans leading-relaxed overflow-x-hidden">
+
+<header class="fixed top-0 right-0 h-screen w-56 bg-white shadow-lg flex flex-col z-50 border-l border-gray-200">
+  <div class="h-14 flex items-center justify-center border-b border-gray-200">
+    <a href="#" class="flex items-center space-x-2 select-none text-gray-900 font-bold text-lg tracking-wide">
+      <span class="text-yellow-500 text-2xl">🌾</span>
+      <span>Dragon Ricemill</span>
+    </a>
+  </div>
+
+  <nav class="flex-1 flex flex-col py-1 pr-1 overflow-y-auto scrollbar-hide">
+    <div class="px-2 py-1">
+      <span class="block text-1 text-gray-500 font-semibold mb-3">Welcome, {{ request.session.user_name }}!</span>
+      <a href="{% url 'dashboard' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 font-semibold hover:text-yellow-600 transition">
+        <i class="fas fa-home w-4 text-yellow-500"></i><span>Home</span>
+      </a>
+      <a href="{% url 'profile' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition text-gray-900">
+        <i class="fas fa-user-circle w-4 text-yellow-500"></i><span>Profile</span>
+      </a>
+    </div>
+    
+
+    {% if request.session.user_role == 'admin' %}
+    <div class="mb-2 px-2">
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Users</p>
+      <a href="{% url 'add_user' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+        <i class="fas fa-user-plus w-4 text-yellow-500"></i><span>Add User</span>
+      </a>
+      <a href="{% url 'edituser' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-user-edit w-4 text-yellow-500"></i><span>Edit User</span>
+      </a>
+      <a href="{% url 'user_account' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-user-circle w-4 text-yellow-500"></i><span>Customer</span>
+      </a>
+
+      
+
+      
+  <!-- New Create Customer Ledger Link -->
+  <a href="{% url 'customer_ledger_create' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+    <i class="fas fa-book w-4 text-yellow-500"></i><span>Create Customer Ledger</span>
+  </a>
+
+      <a href="{% url 'logs' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-file-alt w-4 text-yellow-500"></i><span>User Logs</span>
+      </a>
+      <!-- Delete Customer link (no user_id, so go to selection page) -->
+      
+    </div>
+{% endif %}
+    
+
+    <div class="mb-2 px-2">
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Transaction</p>
+      <a href="{% url 'allorder_history' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-truck-moving w-4 text-yellow-500"></i><span>All Orders History</span>
+      </a>
+      <a href="{% url 'payment_confirmation' 0 %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-truck-moving w-4 text-yellow-500"></i><span>Payment Confirmation</span>
+      </a>
+      <a href="{% url 'delivery_confirmation' 0 %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-truck-moving w-4 text-yellow-500"></i><span>Delivery Confirmation</span>
+      </a>
+    </div>
+
+    
+    {% if request.session.user_role == 'admin' or request.session.user_role == 'employee' %}
+    <div class="mb-2 px-2">
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Inventory</p>
+      <a href="{% url 'addstock' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+        <i class="fas fa-boxes w-4 text-yellow-500"></i><span>Inventory</span>
+      </a>
+      <a href="{% url 'viewstocklevel' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-layer-group w-4 text-yellow-500"></i><span>View Levels</span>
+      </a>
+    </div>
+    {% endif %}
+
+    {% if request.session.user_role == 'admin' or request.session.user_role == 'cashier' %}
+
+<div class="mb-2 px-2">
+  <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Sales</p>
+  <a href="{% url 'new_sale' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+    <i class="fas fa-cart-plus w-4 text-yellow-500"></i><span>New Sale</span>
+  </a>
+  <a href="{% url 'invoice' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+    <i class="fas fa-file-invoice w-4 text-yellow-500"></i><span>Create Invoice</span>
+  </a>
+  
+  <a href="{% url 'view_sales_report' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+    <i class="fas fa-chart-line w-4 text-yellow-500"></i><span>Report</span>
+  </a>
+  <a href="{% url 'inventory_turnover' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+    <i class="fas fa-sync-alt w-4 text-yellow-500"></i><span>Inventory Turnover</span>
+  </a>
+</div>
+  {% endif %}
+
+
+
+    <div class="border-t border-gray-200 mt-auto px-2 py-4">
+      <a href="{% url 'logout' %}" onclick="return confirm('Logout?');" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-red-100 hover:text-red-600 transition font-semibold text-red-500 mt-2">
+        <i class="fas fa-sign-out-alt w-4"></i><span>Logout</span>
+      </a>
+    
+    </div>
+  </nav>
+</header>
+
+
+
+<!-- Push content so it's not behind the sidebar -->
+<div class="mr-56 min-h-screen bg-gray-50">
+  <main class="max-w-4xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">Add New User</h1>
+      <p class="mt-2 text-sm text-gray-600">Create a new user account with appropriate role and permissions.</p>
+    </div>
+
+    <!-- Status Messages -->
+    {% if messages %}
+    <div class="mb-6">
+      {% for message in messages %}
+      <div class="p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-700 border border-green-200{% else %}bg-red-100 text-red-700 border border-red-200{% endif %}">
+        <div class="flex items-center">
+          <i class="fas {% if message.tags == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} mr-2"></i>
+          <p>{{ message }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- User Form -->
+    <div class="bg-white shadow rounded-lg">
+      <form method="POST" class="p-6 space-y-8">
+        {% csrf_token %}
+
+        <!-- Credentials Section -->
+        <div class="space-y-4">
+          <div class="border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900 pb-2">
+              <i class="fas fa-lock text-yellow-500 mr-2"></i>Login Credentials
+            </h2>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username *</label>
+              <input name="username" type="text" id="username" required
+                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring focus:ring-yellow-200 form-input">
+            </div>
+            <div>
+              <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+              <div class="relative">
+                <input name="password" type="password" id="password" required
+                       class="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring focus:ring-yellow-200 form-input">
+                <button type="button" onclick="togglePassword()"
+                        class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                  <i class="fas fa-eye" id="toggleIcon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Personal Information Section -->
+        <div class="space-y-4">
+          <div class="border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900 pb-2">
+              <i class="fas fa-user text-yellow-500 mr-2"></i>Personal Information
+            </h2>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label for="first_name" class="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+              <input name="first_name" type="text" id="first_name" required
+                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring focus:ring-yellow-200 form-input">
+            </div>
+            <div>
+              <label for="middle_name" class="block text-sm font-medium text-gray-700 mb-1">Middle Name</label>
+              <input name="middle_name" type="text" id="middle_name"
+                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring focus:ring-yellow-200 form-input">
+            </div>
+            <div>
+              <label for="last_name" class="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
+              <input name="last_name" type="text" id="last_name" required
+                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring focus:ring-yellow-200 form-input">
+            </div>
+            <div>
+              <label for="suffix" class="block text-sm font-medium text-gray-700 mb-1">Suffix</label>
+              <input name="suffix" type="text" id="suffix" placeholder="Jr., Sr., III, etc."
+                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring focus:ring-yellow-200 form-input">
+            </div>
+          </div>
+        </div>
+
+        <!-- Role Section -->
+        <div class="space-y-4">
+          <div class="border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900 pb-2">
+              <i class="fas fa-user-tag text-yellow-500 mr-2"></i>Role Assignment
+            </h2>
+          </div>
+          <div class="grid grid-cols-1 gap-6 max-w-md">
+            <div>
+              <label for="role" class="block text-sm font-medium text-gray-700 mb-1">User Role *</label>
+              <select name="role" id="role" required
+                      class="w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring focus:ring-yellow-200 form-input">
+                <option value="" disabled selected>Select a role</option>
+                <option value="admin">Administrator</option>
+                <option value="employee">Employee</option>
+                <option value="cashier">Cashier</option>
+              </select>
+              <p class="mt-1 text-sm text-gray-500" id="roleDescription"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="pt-6 border-t border-gray-200 flex justify-end space-x-3">
+          <button type="button" onclick="resetForm()"
+                  class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+            Reset Form
+          </button>
+          <button type="submit"
+                  class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+            Create User
+          </button>
+        </div>
+      </form>
+    </div>
+  </main>
+</div>
+
+<script>
+  // Toggle password visibility
+  function togglePassword() {
+    const passwordInput = document.getElementById('password');
+    const toggleIcon = document.getElementById('toggleIcon');
+    
+    if (passwordInput.type === 'password') {
+      passwordInput.type = 'text';
+      toggleIcon.classList.remove('fa-eye');
+      toggleIcon.classList.add('fa-eye-slash');
+    } else {
+      passwordInput.type = 'password';
+      toggleIcon.classList.remove('fa-eye-slash');
+      toggleIcon.classList.add('fa-eye');
+    }
+  }
+
+  // Role descriptions
+  const roleDescriptions = {
+    'admin': 'Full access to all system features and administrative functions.',
+    'employee': 'Access to inventory management and basic system features.',
+    'cashier': 'Access to sales transactions and customer management.'
+  };
+
+  // Update role description
+  document.getElementById('role').addEventListener('change', function() {
+    const description = roleDescriptions[this.value] || '';
+    document.getElementById('roleDescription').textContent = description;
+  });
+
+  // Reset form
+  function resetForm() {
+    if (confirm('Are you sure you want to reset the form? All entered data will be cleared.')) {
+      document.querySelector('form').reset();
+      document.getElementById('roleDescription').textContent = '';
+    }
+  }
+
+  // Form validation
+  document.querySelector('form').addEventListener('submit', function(e) {
+    const requiredFields = ['username', 'password', 'first_name', 'last_name', 'role'];
+    let isValid = true;
+
+    requiredFields.forEach(field => {
+      const input = document.getElementById(field);
+      if (!input.value.trim()) {
+        input.classList.add('border-red-500');
+        isValid = false;
+      } else {
+        input.classList.remove('border-red-500');
+      }
+    });
+
+    if (!isValid) {
+      e.preventDefault();
+      alert('Please fill in all required fields marked with *');
+    }
+  });
+</script>
+</body>
+</html>

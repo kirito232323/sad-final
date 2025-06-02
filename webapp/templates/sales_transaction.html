@@ -1,0 +1,751 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sales Transaction - Dragon Ricemill</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+<style>
+@keyframes slideIn {
+  0% { opacity: 0; transform: translateX(100%); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+}
+    .animate-slideIn { animation: slideIn 0.3s ease forwards; }
+    .animate-fadeIn { animation: fadeIn 0.3s ease forwards; }
+    html { scroll-behavior: smooth; }
+    .dropdown:hover .dropdown-menu {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    /* Form focus states */
+    .form-input:focus {
+      outline: none;
+      ring: 2px;
+      ring-offset: 2px;
+      ring-color: #EAB308;
+    }
+    
+    /* Custom loading spinner */
+    .loading-spinner {
+      border: 3px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top: 3px solid #EAB308;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Toast animations */
+    .toast-enter {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    .toast-enter-active {
+      transform: translateX(0);
+      opacity: 1;
+      transition: all 0.3s ease;
+    }
+    .toast-exit {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    .toast-exit-active {
+      transform: translateX(100%);
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen font-sans leading-relaxed overflow-x-hidden">
+
+<header class="fixed top-0 right-0 h-screen w-64 bg-white shadow-lg flex flex-col z-50 border-l border-gray-200">
+  <div class="h-14 flex items-center justify-center border-b border-gray-200">
+    <a href="#" class="flex items-center space-x-2 select-none text-gray-900 font-bold text-lg tracking-wide">
+      <span class="text-yellow-500 text-2xl">🌾</span>
+      <span>Dragon Ricemill</span>
+    </a>
+  </div>
+
+  <nav class="flex-1 flex flex-col py-1 pr-1 overflow-y-auto scrollbar-hide">
+    <div class="px-2 py-1">
+      <span class="block text-1 text-gray-500 font-semibold mb-3">Welcome, {{ request.session.user_name }}!</span>
+      <a href="{% url 'dashboard' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 font-semibold hover:text-yellow-600 transition">
+        <i class="fas fa-home w-4 text-yellow-500"></i><span>Home</span>
+      </a>
+      <a href="{% url 'profile' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition text-gray-900">
+        <i class="fas fa-user-circle w-4 text-yellow-500"></i><span>Profile</span>
+      </a>
+    </div>
+    
+
+    {% if request.session.user_role == 'admin' %}
+    <div class="mb-2 px-2">
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Users</p>
+      <a href="{% url 'add_user' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+        <i class="fas fa-user-plus w-4 text-yellow-500"></i><span>Add User</span>
+      </a>
+      <a href="{% url 'edituser' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-user-edit w-4 text-yellow-500"></i><span>Edit User</span>
+      </a>
+      <a href="{% url 'user_account' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-user-circle w-4 text-yellow-500"></i><span>Customer</span>
+      </a>
+
+      
+
+      
+  <!-- New Create Customer Ledger Link -->
+  <a href="{% url 'customer_ledger_create' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+    <i class="fas fa-book w-4 text-yellow-500"></i><span>Create Customer Ledger</span>
+  </a>
+
+      <a href="{% url 'logs' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-file-alt w-4 text-yellow-500"></i><span>User Logs</span>
+      </a>
+      <!-- Delete Customer link (no user_id, so go to selection page) -->
+      
+    </div>
+{% endif %}
+    
+
+    <div class="mb-2 px-2">
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Transaction</p>
+      <a href="{% url 'allorder_history' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-truck-moving w-4 text-yellow-500"></i><span>All Orders History</span>
+      </a>
+      <a href="{% url 'payment_confirmation' 0 %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-truck-moving w-4 text-yellow-500"></i><span>Payment Confirmation</span>
+      </a>
+      <a href="{% url 'delivery_confirmation' 0 %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-truck-moving w-4 text-yellow-500"></i><span>Delivery Confirmation</span>
+      </a>
+    </div>
+
+    
+    {% if request.session.user_role == 'admin' or request.session.user_role == 'employee' %}
+    <div class="mb-2 px-2">
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Inventory</p>
+      <a href="{% url 'addstock' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+        <i class="fas fa-boxes w-4 text-yellow-500"></i><span>Inventory</span>
+      </a>
+      <a href="{% url 'viewstocklevel' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-layer-group w-4 text-yellow-500"></i><span>View Levels</span>
+      </a>
+    </div>
+    {% endif %}
+
+    {% if request.session.user_role == 'admin' or request.session.user_role == 'cashier' %}
+
+<div class="mb-2 px-2">
+  <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Sales</p>
+  <a href="{% url 'new_sale' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+    <i class="fas fa-cart-plus w-4 text-yellow-500"></i><span>New Sale</span>
+  </a>
+  <a href="{% url 'invoice' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+    <i class="fas fa-file-invoice w-4 text-yellow-500"></i><span>Create Invoice</span>
+  </a>
+  
+  <a href="{% url 'view_sales_report' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+    <i class="fas fa-chart-line w-4 text-yellow-500"></i><span>Report</span>
+  </a>
+  <a href="{% url 'inventory_turnover' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+    <i class="fas fa-sync-alt w-4 text-yellow-500"></i><span>Inventory Turnover</span>
+  </a>
+</div>
+  {% endif %}
+
+
+
+    <div class="border-t border-gray-200 mt-auto px-2 py-4">
+      <a href="{% url 'logout' %}" onclick="return confirm('Logout?');" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-red-100 hover:text-red-600 transition font-semibold text-red-500 mt-2">
+        <i class="fas fa-sign-out-alt w-4"></i><span>Logout</span>
+      </a>
+    
+    </div>
+  </nav>
+</header>
+
+
+<main class="mr-64 p-8">
+  <div class="max-w-5xl mx-auto">
+    <!-- Page Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">Sales Transaction</h1>
+      <p class="text-gray-600 mt-2">Create a new sales order for customers</p>
+    </div>
+
+    <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-200">
+    <section id="customer-order">
+        <!-- Status Messages -->
+        <div id="messageBox" class="hidden transform transition-all duration-300 ease-in-out mb-6"></div>
+      {% if status or message %}
+          <div class="p-4 mb-6 rounded-lg bg-green-50 border border-green-200 text-green-800 text-center font-medium shadow-sm flex items-center justify-center gap-3 animate-fadeIn">
+            <i class="fas fa-check-circle text-2xl text-green-500"></i>
+          <span class="whitespace-pre-line break-words">
+              {% if status %}Status: {{ status|title }}{% endif %}
+              {{ message|safe }}
+          </span>
+        </div>
+      {% endif %}
+ 
+        <!-- Main Order Form -->
+        <form id="orderForm" method="POST" action="{% url 'process_order' %}" class="space-y-6">
+        {% csrf_token %}
+        <input type="hidden" name="employee_id" value="{{ request.session.user_id }}">
+        <input type="hidden" name="delivery_status" value="Pending">
+        <input type="hidden" name="approval_status" value="Pending">
+        <input type="hidden" name="receiver_name" value="">
+
+          <!-- Cashier Info -->
+          <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <p class="text-sm text-gray-600">Cashier Information</p>
+            <p class="font-medium text-gray-900 mt-1">{{ request.session.user_name }} ({{ request.session.user_role|title }})</p>
+          </div>
+
+          <!-- Customer Selection Section -->
+          <div class="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-semibold text-gray-900">Customer Details</h3>
+            </div>
+
+            <!-- Customer Dropdown -->
+            <div class="grid grid-cols-1 gap-4">
+<div>
+                <label for="customer_id" class="block text-sm font-medium text-gray-700 mb-1">Select Customer</label>
+                <select name="customer_id" id="customer_id" 
+                        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" 
+                        required>
+                  <option value="" selected hidden>Choose a customer...</option>
+    {% for customer in customer_users %}
+                    <option value="{{ customer.UserID }}"
+        data-first-name="{{ customer.name.first_name|default_if_none:'' }}"
+        data-middle-name="{{ customer.name.middle_name|default_if_none:'' }}"
+        data-last-name="{{ customer.name.last_name|default_if_none:'' }}"
+        data-suffix="{{ customer.name.suffix|default_if_none:'' }}"
+        data-house-unit-number="{{ customer.address.house_unit_number|default_if_none:'' }}"
+        data-building-name="{{ customer.address.building_name|default_if_none:'' }}"
+        data-street-name="{{ customer.address.street_name|default_if_none:'' }}"
+        data-barangay="{{ customer.address.barangay|default_if_none:'' }}"
+        data-city-municipality="{{ customer.address.city_municipality|default_if_none:'' }}"
+        data-province="{{ customer.address.province|default_if_none:'' }}"
+        data-zip-code="{{ customer.address.zip_code|default_if_none:'' }}"
+                            data-customer-mobile="{{ customer.Customer_Mobile_Number|default_if_none:'' }}">
+                      {{ customer.name.last_name }}, {{ customer.name.first_name }}
+                      {% if customer.name.middle_name %} {{ customer.name.middle_name }}{% endif %}
+                      {% if customer.name.suffix %} {{ customer.name.suffix }}{% endif %}
+      </option>
+    {% endfor %}
+  </select>
+</div>
+
+              <!-- Customer Details Grid -->
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                <div class="space-y-2">
+                  <input type="text" name="first_name" placeholder="First Name" 
+                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" readonly />
+                  <input type="text" name="middle_name" placeholder="Middle Name"
+                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" readonly />
+                </div>
+                <div class="space-y-2">
+                  <input type="text" name="last_name" placeholder="Last Name"
+                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" readonly />
+                  <input type="text" name="suffix" placeholder="Suffix"
+                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" readonly />
+                </div>
+                <div class="space-y-2">
+                  <input type="text" name="customer_mobile_number" placeholder="Mobile Number"
+                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" readonly />
+                </div>
+              </div>
+
+              <!-- Address Details -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div class="space-y-2">
+                  <input type="text" name="house_unit_number" placeholder="House/Unit Number"
+                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" readonly />
+                  <input type="text" name="building_name" placeholder="Building Name"
+                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" readonly />
+                  <input type="text" name="street_name" placeholder="Street Name"
+                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" readonly />
+                </div>
+                <div class="space-y-2">
+                  <input type="text" name="barangay" placeholder="Barangay"
+                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" readonly />
+                  <input type="text" name="city_municipality" placeholder="City/Municipality"
+                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" readonly />
+                  <div class="grid grid-cols-2 gap-2">
+                    <input type="text" name="province" placeholder="Province"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" readonly />
+                    <input type="text" name="zip_code" placeholder="ZIP Code"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" readonly />
+                  </div>
+                </div>
+  </div>
+  </div>
+</div>
+
+          <!-- Order Details Section -->
+          <div class="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+            <h3 class="text-lg font-semibold text-gray-900">Order Details</h3>
+            
+            <!-- Rice Selection and Quantity -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <div>
+                <label for="stock_id" class="block text-sm font-medium text-gray-700 mb-1">Rice Type & Packaging</label>
+                <select name="stock_id" id="stock_id" 
+                        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                        required>
+                  <option value="" disabled hidden selected>Select Rice Type...</option>
+      {% for stock in stock_data %}
+                    <option value="{{ stock.stockID }}"
+          data-price="{{ stock.price_per_sack }}"
+                            data-max-quantity="{{ stock.current_stock }}">
+          {{ stock.rice_type.rice_type }} - {{ stock.packaging }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+              
+  <div>
+                <label for="quantity" class="block text-sm font-medium text-gray-700 mb-1">Quantity (Sacks)</label>
+                <input type="number" min="1" name="quantity" id="quantity"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                       placeholder="Enter quantity" required />
+  </div>
+              
+  <div>
+                <label for="cost_per_sack" class="block text-sm font-medium text-gray-700 mb-1">Cost Per Sack (₱)</label>
+                <input type="number" min="0" step="0.01" name="cost_per_sack" id="cost_per_sack"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                       placeholder="0.00" readonly />
+  </div>
+</div>
+
+            <!-- Costs and Payment -->
+            <div class="grid grid-cols-1 gap-4 mt-6">
+  <div>
+                <label for="subtotal" class="block text-sm font-medium text-gray-700 mb-1">Subtotal (₱)</label>
+                <input type="text" id="subtotal" name="subtotal"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                       placeholder="0.00" readonly />
+              </div>
+
+              <div class="bg-gray-50 rounded-lg p-4 space-y-3">
+                <div class="flex justify-between items-center">
+                  <label class="text-sm font-medium text-gray-700">Bulk Order Discount (5%)</label>
+                  <span id="bulkDiscountAmount" class="text-sm text-gray-600">₱0.00</span>
+                </div>
+                
+                <div class="flex justify-between items-center">
+                  <div class="flex items-center">
+                    <input type="checkbox" id="loyalCustomerCheckbox"
+                           class="w-4 h-4 text-yellow-500 border-gray-300 rounded focus:ring-yellow-500" />
+                    <label for="loyalCustomerCheckbox" class="ml-2 text-sm font-medium text-gray-700">Loyal Customer Discount (5%)</label>
+  </div>
+                  <span id="loyalDiscountAmount" class="text-sm text-gray-600">₱0.00</span>
+  </div>
+
+                <div class="flex justify-between items-center pt-2 border-t border-gray-200">
+                  <label class="text-sm font-medium text-gray-700">Total Discount</label>
+                  <span id="totalDiscountAmount" class="text-sm font-semibold text-green-600">₱0.00</span>
+  </div>
+</div>
+
+              <div class="bg-yellow-50 rounded-lg p-4">
+                <div class="flex justify-between items-center">
+                  <label for="final_total" class="text-sm font-medium text-gray-700">Final Total (₱)</label>
+                  <input type="text" id="final_total" name="final_total"
+                         class="w-32 px-3 py-1 border border-gray-300 rounded bg-white font-semibold text-right"
+                         readonly />
+                </div>
+              </div>
+
+            <!-- Delivery and Payment Method -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+              <div>
+                <label for="delivery_type_bottom" class="block text-sm font-medium text-gray-700 mb-1">Delivery Type</label>
+                <select name="delivery_type" id="delivery_type_bottom"
+                        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                        required>
+                  <option value="delivery" selected>Delivery</option>
+                  <option value="pickup">Pick Up</option>
+                </select>
+              </div>
+              
+              <div>
+                <label for="payment_method_bottom" class="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                <select id="payment_method_bottom" name="payment_method"
+                        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                        required>
+                  <option value="" disabled selected>Select Payment Method</option>
+                  <option value="cash">Cash</option>
+                  <option value="gcash">GCash</option>
+                  <option value="bank">Bank Transfer</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Receiver Information -->
+            <div id="receiver_info" class="mt-6 bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <h4 class="text-lg font-semibold text-gray-900 mb-4">Receiver Information</h4>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                  <label for="receiver_name" class="block text-sm font-medium text-gray-700">Receiver Name</label>
+                  <div class="relative">
+                    <input type="text" 
+                           id="receiver_name" 
+                           name="receiver_name" 
+                           class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 shadow-sm"
+                           placeholder="Enter receiver's name" />
+                    <p class="mt-1.5 text-xs text-gray-500">Leave blank if same as customer</p>
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <label for="receiver_mobile_number" class="block text-sm font-medium text-gray-700">Receiver Contact Number</label>
+                  <div class="relative">
+                    <input type="text" 
+                           id="receiver_mobile_number" 
+                           name="receiver_mobile_number" 
+                           class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 shadow-sm"
+                           placeholder="Enter receiver's contact number"
+                           maxlength="11" />
+                    <p class="mt-1.5 text-xs text-gray-500">Leave blank if same as customer</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Reference Code -->
+            <div id="referenceCodeGroup" class="hidden mt-4">
+              <label for="reference_code" class="block text-sm font-medium text-gray-700 mb-1">Reference Code</label>
+  <input type="text" id="reference_code" name="reference_code"
+                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                     placeholder="Enter payment reference code" />
+            </div>
+</div>
+
+          <!-- Submit Button -->
+          <div class="flex justify-end mt-6">
+  <button type="submit"
+                    class="inline-flex items-center px-6 py-3 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors duration-200">
+              <span id="submitText">Submit Order</span>
+              <div id="submitSpinner" class="loading-spinner ml-2 hidden"></div>
+  </button>
+</div>
+</form>
+      </section>
+    </div>
+  </div>
+</main>
+
+<!-- Toast Container -->
+<div id="toast-container" class="fixed top-5 right-5 z-50 space-y-2 min-w-[300px]"></div>
+
+<script>
+// Enhanced Toast Functionality
+function showToast(message, type = 'success') {
+  const toast = document.createElement('div');
+  const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+  const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+  
+  toast.className = `${bgColor} text-white p-4 rounded-lg shadow-lg flex items-center space-x-3 toast-enter`;
+  toast.innerHTML = `
+    <i class="fas ${icon}"></i>
+    <span class="flex-1">${message}</span>
+    <button class="text-white hover:text-gray-200 transition-colors">
+      <i class="fas fa-times"></i>
+    </button>
+  `;
+  
+  document.getElementById('toast-container').appendChild(toast);
+  
+  // Trigger enter animation
+  setTimeout(() => toast.classList.remove('toast-enter'), 10);
+  
+  // Auto dismiss after 5 seconds
+  setTimeout(() => {
+    toast.classList.add('toast-exit');
+    setTimeout(() => toast.remove(), 300);
+  }, 5000);
+  
+  // Dismiss on click
+  toast.querySelector('button').addEventListener('click', () => {
+    toast.classList.add('toast-exit');
+    setTimeout(() => toast.remove(), 300);
+  });
+}
+
+// Form Submission Enhancement
+document.getElementById('orderForm').addEventListener('submit', function(event) {
+  event.preventDefault();
+  
+  // Show loading state
+  const submitBtn = this.querySelector('button[type="submit"]');
+  const submitText = document.getElementById('submitText');
+  const submitSpinner = document.getElementById('submitSpinner');
+  
+  submitBtn.disabled = true;
+  submitText.textContent = 'Processing...';
+  submitSpinner.classList.remove('hidden');
+  
+  const formData = new FormData(this);
+
+  fetch("{% url 'process_order' %}", {
+    method: "POST",
+    headers: {
+      "X-CSRFToken": formData.get('csrfmiddlewaretoken')
+    },
+    body: formData,
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.status === "success") {
+      showToast(data.message || "Order processed successfully!");
+      this.reset();
+      // Reset calculated fields
+      document.getElementById('subtotal').value = '';
+      document.getElementById('bulkDiscountAmount').textContent = '₱0.00';
+      document.getElementById('loyalDiscountAmount').textContent = '₱0.00';
+      document.getElementById('totalDiscountAmount').textContent = '₱0.00';
+      document.getElementById('final_total').value = '';
+    } else {
+      showToast(data.message || "Error processing order.", 'error');
+    }
+  })
+  .catch(error => {
+    showToast('An unexpected error occurred. Please try again.', 'error');
+    console.error('Error:', error);
+  })
+  .finally(() => {
+    // Reset button state
+    submitBtn.disabled = false;
+    submitText.textContent = 'Submit Order';
+    submitSpinner.classList.add('hidden');
+  });
+});
+
+// Enhanced Input Validation
+document.querySelectorAll('input[type="number"]').forEach(input => {
+  input.addEventListener('input', function() {
+    if (this.value < 0) this.value = 0;
+  });
+  
+  input.addEventListener('keydown', function(e) {
+    if (e.key === '-' || e.key === 'e') e.preventDefault();
+  });
+});
+
+// Mobile Number Validation
+document.querySelector('input[name="customer_mobile_number"]').addEventListener('input', function() {
+  this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11);
+});
+
+// Improved Payment Method Handling
+document.getElementById('payment_method_bottom').addEventListener('change', function() {
+  const referenceGroup = document.getElementById('referenceCodeGroup');
+  const method = this.value.toLowerCase();
+  
+  if (method === 'gcash' || method === 'bank') {
+    referenceGroup.classList.remove('hidden');
+    referenceGroup.classList.add('animate-fadeIn');
+  } else {
+    referenceGroup.classList.add('hidden');
+  }
+});
+
+// Customer Selection Auto-fill
+document.addEventListener('DOMContentLoaded', function() {
+  const customerSelect = document.getElementById('customer_id');
+  const receiverNameInput = document.querySelector('input[name="receiver_name"]');
+
+  if (customerSelect) {
+    customerSelect.addEventListener('change', function() {
+      const selected = customerSelect.options[customerSelect.selectedIndex];
+      
+      // Auto-fill customer information
+      const fields = {
+        'first_name': 'data-first-name',
+        'middle_name': 'data-middle-name',
+        'last_name': 'data-last-name',
+        'suffix': 'data-suffix',
+        'house_unit_number': 'data-house-unit-number',
+        'building_name': 'data-building-name',
+        'street_name': 'data-street-name',
+        'barangay': 'data-barangay',
+        'city_municipality': 'data-city-municipality',
+        'province': 'data-province',
+        'zip_code': 'data-zip-code',
+        'customer_mobile_number': 'data-customer-mobile'
+      };
+
+      // Update each field with the corresponding data attribute
+      Object.entries(fields).forEach(([fieldName, dataAttr]) => {
+        const input = document.querySelector(`input[name="${fieldName}"]`);
+        if (input) {
+          input.value = selected.getAttribute(dataAttr) || '';
+        }
+      });
+
+      // Update receiver name
+      if (receiverNameInput) {
+        const firstName = selected.getAttribute('data-first-name') || '';
+        const middleName = selected.getAttribute('data-middle-name') || '';
+        const lastName = selected.getAttribute('data-last-name') || '';
+        const suffix = selected.getAttribute('data-suffix') || '';
+        
+        const fullName = [firstName, middleName, lastName, suffix]
+          .filter(part => part.trim() !== '')
+          .join(' ');
+        
+        receiverNameInput.value = fullName;
+      }
+    });
+
+    // Check for new customer ID in URL and auto-select
+    const urlParams = new URLSearchParams(window.location.search);
+    const newCustomerId = urlParams.get('new_customer_id');
+    if (newCustomerId) {
+      customerSelect.value = newCustomerId;
+      // Trigger change event to populate fields
+      customerSelect.dispatchEvent(new Event('change'));
+    }
+  }
+});
+
+// Calculate Total and Update Fields
+  function calculateTotal() {
+  const quantity = parseFloat(document.getElementById('quantity')?.value) || 0;
+  const costPerSack = parseFloat(document.getElementById('cost_per_sack')?.value) || 0;
+  const isLoyalCustomer = document.getElementById('loyalCustomerCheckbox')?.checked || false;
+
+  // Calculate subtotal
+  const subtotal = quantity * costPerSack;
+  
+  // Calculate discounts
+  const bulkDiscount = quantity >= 50 ? subtotal * 0.05 : 0; // 5% for bulk order
+  const loyalDiscount = isLoyalCustomer ? subtotal * 0.05 : 0; // 5% for loyal customer
+  const totalDiscount = bulkDiscount + loyalDiscount;
+  
+  // Calculate final total
+  const finalTotal = subtotal - totalDiscount;
+
+  // Format numbers for display
+  const formatCurrency = (number) => '₱' + number.toFixed(2);
+
+  // Update display fields
+  document.getElementById('subtotal').value = subtotal.toFixed(2);
+  document.getElementById('bulkDiscountAmount').textContent = formatCurrency(bulkDiscount);
+  document.getElementById('loyalDiscountAmount').textContent = formatCurrency(loyalDiscount);
+  document.getElementById('totalDiscountAmount').textContent = formatCurrency(totalDiscount);
+  document.getElementById('final_total').value = finalTotal.toFixed(2);
+
+  // Update hidden fields for form submission
+  document.querySelector('input[name="total_cost"]').value = finalTotal.toFixed(2);
+  document.querySelector('input[name="discount"]').value = totalDiscount.toFixed(2);
+}
+
+// Set up event listeners for calculation
+document.addEventListener('DOMContentLoaded', function() {
+  const stockSelect = document.getElementById('stock_id');
+  const quantityInput = document.getElementById('quantity');
+  const loyalCustomerCheckbox = document.getElementById('loyalCustomerCheckbox');
+
+  // Handle stock selection
+  stockSelect?.addEventListener('change', function() {
+    const selected = this.options[this.selectedIndex];
+    const price = selected.getAttribute('data-price');
+    const maxQuantity = selected.getAttribute('data-max-quantity');
+
+    document.getElementById('cost_per_sack').value = parseFloat(price || 0).toFixed(2);
+    
+    if (quantityInput && maxQuantity) {
+      quantityInput.max = maxQuantity;
+    }
+
+    calculateTotal();
+  });
+
+  // Handle quantity changes
+  quantityInput?.addEventListener('input', function() {
+    const max = parseInt(this.max, 10);
+    if (!isNaN(max) && parseInt(this.value, 10) > max) {
+      this.value = max;
+    }
+    calculateTotal();
+  });
+
+  // Handle loyal customer checkbox
+  loyalCustomerCheckbox?.addEventListener('change', calculateTotal);
+});
+
+// Handle Delivery Type and Receiver Information
+document.addEventListener('DOMContentLoaded', function() {
+  const deliveryTypeSelect = document.getElementById('delivery_type_bottom');
+  const receiverInfo = document.getElementById('receiver_info');
+  const receiverMobileInput = document.getElementById('receiver_mobile_number');
+
+  // Function to toggle receiver info visibility
+  function toggleReceiverInfo() {
+    if (deliveryTypeSelect.value === 'delivery') {
+      receiverInfo.classList.remove('hidden');
+      receiverInfo.classList.add('animate-fadeIn');
+    } else {
+      receiverInfo.classList.add('hidden');
+      // Clear receiver fields when switching to pickup
+      document.getElementById('receiver_name').value = '';
+      document.getElementById('receiver_mobile_number').value = '';
+    }
+  }
+
+  // Initial state
+  toggleReceiverInfo();
+
+  // Listen for delivery type changes
+  deliveryTypeSelect.addEventListener('change', toggleReceiverInfo);
+
+  // Validate receiver mobile number
+  receiverMobileInput.addEventListener('input', function() {
+    // Remove any non-numeric characters
+    this.value = this.value.replace(/[^0-9]/g, '');
+    
+    // Limit to 11 digits
+    if (this.value.length > 11) {
+      this.value = this.value.slice(0, 11);
+    }
+  });
+
+  // Auto-fill receiver name from customer when customer changes
+  const customerSelect = document.getElementById('customer_id');
+  if (customerSelect) {
+    customerSelect.addEventListener('change', function() {
+      const selected = customerSelect.options[customerSelect.selectedIndex];
+      const receiverNameInput = document.getElementById('receiver_name');
+      
+      // Clear existing receiver name
+      receiverNameInput.value = '';
+      
+      // Auto-fill receiver mobile from customer mobile
+      const customerMobile = selected.getAttribute('data-customer-mobile') || '';
+      if (!receiverMobileInput.value) {
+        receiverMobileInput.value = customerMobile;
+      }
+    });
+  }
+});
+</script>
+</body>
+</html>
