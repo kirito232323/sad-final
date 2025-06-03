@@ -362,50 +362,106 @@
   </div>
 </section>
 
-    <!-- Recent Sales Table -->
-    <section class="bg-white rounded-2xl shadow p-6">
-      <h2 class="text-xl font-semibold text-gray-800 mb-4">🛒 Recent Sales</h2>
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 text-sm text-left">
-          <thead class="bg-gray-100 text-gray-600 uppercase tracking-wider text-xs">
-            <tr>
-              <th class="px-4 py-3">Customer Name</th>
-              <th class="px-4 py-3">Rice Type</th>
-              <th class="px-4 py-3 text-right">Quantity</th>
-              <th class="px-4 py-3 text-right">Price/Sack (₱)</th>
-              <th class="px-4 py-3 text-right">Total Cost (₱)</th>
-              <th class="px-4 py-3 text-center">Payment Method</th>
-              <th class="px-4 py-3 text-center">Status</th>
-              <th class="px-4 py-3">Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for sale in recent_sales %}
-              <tr class="hover:bg-green-50 transition">
-                <td class="px-4 py-2">{{ sale.customer_name }}</td>
-                <td class="px-4 py-2">{{ sale.rice_type.rice_type }}</td>
-                <td class="px-4 py-2 text-right">{{ sale.quantity }}</td>
-                <td class="px-4 py-2 text-right">₱{{ sale.cost_per_sack|floatformat:2|intcomma }}</td>
-                <td class="px-4 py-2 text-right font-semibold">₱{{ sale.total_cost|floatformat:2|intcomma }}</td>
-                <td class="px-4 py-2 text-center">{{ sale.payment_method }}</td>
-                <td class="px-4 py-2 text-center">
-                  {% if sale.approval_status == "Approved" %}
-                    <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">Approved</span>
-                  {% elif sale.approval_status == "Declined" %}
-                    <span class="bg-red-100 text-red-700 text-xs px-2 py-1 rounded-full">Declined</span>
-                  {% else %}
-                    <span class="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full">Pending</span>
-                  {% endif %}
-                </td>
-                <td class="px-4 py-2">{{ sale.created_at|date:"M d, Y H:i" }}</td>
-              </tr>
-            {% empty %}
-              <tr><td colspan="9" class="text-center py-6 text-gray-500">No recent sales available.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </section>
+<!-- Recent Sales Table -->
+<section class="bg-white rounded-2xl shadow p-6 mb-8">
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-xl font-semibold text-gray-800">🛒 Recent Orders</h2>
+    {% if orders %}
+    <a href="{% url 'allorder_history' %}" class="text-sm text-blue-600 hover:text-blue-800 flex items-center">
+      <span>View All Orders</span>
+      <i class="fas fa-arrow-right ml-2"></i>
+    </a>
+    {% endif %}
+  </div>
+  
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead>
+        <tr class="bg-gray-50">
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
+          <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total Amount</th>
+          <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+          <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        {% for order in orders %}
+        <tr class="hover:bg-gray-50 transition-colors duration-200">
+          <td class="px-4 py-3 text-sm text-gray-900">
+            {% if order.reference_code %}
+              #{{ order.reference_code }}
+            {% else %}
+              #{{ order.id }}
+            {% endif %}
+          </td>
+          <td class="px-4 py-3">
+            <div class="text-sm font-medium text-gray-900">{{ order.customer.FirstName }} {{ order.customer.LastName }}</div>
+            <div class="text-xs text-gray-500">{{ order.payment_method }}</div>
+          </td>
+          <td class="px-4 py-3">
+            <div class="text-sm text-gray-900">
+              {% for item in order.items.all|slice:":2" %}
+                {{ item.rice_type.rice_type }} ({{ item.quantity }} sacks){% if not forloop.last %}, {% endif %}
+              {% endfor %}
+              {% if order.items.all|length > 2 %}
+                <span class="text-gray-500">+{{ order.items.all|length|add:"-2" }} more</span>
+              {% endif %}
+            </div>
+          </td>
+          <td class="px-4 py-3 text-right text-sm font-medium text-gray-900">
+            ₱{{ order.total_amount|floatformat:2|intcomma }}
+          </td>
+          <td class="px-4 py-3 text-center">
+            {% if order.status == "Completed" %}
+              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                Completed
+              </span>
+            {% elif order.status == "Pending" %}
+              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                Pending
+              </span>
+            {% elif order.status == "Cancelled" %}
+              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                Cancelled
+              </span>
+            {% else %}
+              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                {{ order.status }}
+              </span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-sm text-gray-500">
+            {{ order.created_at|date:"M d, Y" }}<br>
+            <span class="text-xs">{{ order.created_at|date:"h:i A" }}</span>
+          </td>
+          <td class="px-4 py-3 text-center">
+            <a href="{% url 'view_order' order.id %}" class="text-blue-600 hover:text-blue-800">
+              <i class="fas fa-eye"></i>
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="px-4 py-8 text-center text-sm text-gray-500">
+            <div class="flex flex-col items-center justify-center space-y-2">
+              <i class="fas fa-shopping-cart text-gray-400 text-3xl mb-2"></i>
+              <p>No recent orders available</p>
+              {% if request.session.user_role == 'admin' or request.session.user_role == 'cashier' %}
+                <a href="{% url 'new_sale' %}" class="text-blue-600 hover:text-blue-800 text-sm">
+                  Create New Order
+                </a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
 
   </main>
 

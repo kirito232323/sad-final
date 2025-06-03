@@ -287,7 +287,6 @@ class Supplier(models.Model):
         verbose_name = "webapp_supplier"
         verbose_name_plural = "webapp_supplier"
 
-
 class Employee(models.Model):
     EmployeeID = models.AutoField(primary_key=True)
     FirstName = models.CharField(max_length=50)
@@ -296,6 +295,7 @@ class Employee(models.Model):
     Suffix = models.CharField(max_length=20, blank=True, null=True)
     Role = models.CharField(max_length=100)
     Username = models.CharField(max_length=50, unique=True)
+    Email = models.EmailField(max_length=254, unique=True, null=True, blank=True)
     Password = models.CharField(max_length=50)
     Account_Status = models.CharField(max_length=20, default='inactive')
 

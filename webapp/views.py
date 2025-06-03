@@ -920,8 +920,38 @@ def new_sale_view(request):
 def view_sales_report(request):
     return render(request, 'view_sales_report.html', {})
 
+from django.shortcuts import render
+from .models import Rice, Stock
+from django.db.models import F
+
 def inventory_turnover(request):
-    return render(request, 'Inventory_Turnover_Report.html')
+    rice_filter = request.GET.get('rice_type')
+
+    # Get all rice types for the dropdown
+    rice_types = Rice.objects.filter(is_active=True)
+
+    # Base query
+    turnover_data = Stock.objects.select_related('rice_type').all()
+
+    if rice_filter:
+        turnover_data = turnover_data.filter(rice_type__riceID=rice_filter)
+
+    # Simulate COGS and Inventory Turnover for each stock
+    for item in turnover_data:
+        item.cogs = item.stock_out * item.price_per_sack
+        try:
+            item.inventory_turnover_ratio = round(item.cogs / ((item.stock_in + item.stock_out) / 2), 2)
+        except ZeroDivisionError:
+            item.inventory_turnover_ratio = 0
+
+    context = {
+        'turnover_data': turnover_data,
+        'rice_types': rice_types,
+        'selected_rice_type': rice_filter,
+    }
+
+    return render(request, 'Inventory_Turnover_Report.html', context)
+
 
 
 from django.shortcuts import render
@@ -1031,10 +1061,11 @@ def adduser(request):
         last_name = request.POST.get('last_name')
         suffix = request.POST.get('suffix')  # optional
         role = request.POST.get('role')
+        email = request.POST.get('email')  # <-- Added email here
 
         # Basic validation example (you can expand this)
-        if not (username and password and first_name and last_name and role):
-            messages.error(request, "Please fill in all required fields.")
+        if not (username and password and first_name and last_name and role and email):
+            messages.error(request, "Please fill in all required fields including email.")
             return redirect('add_user')
 
         new_employee = Employee(
@@ -1045,6 +1076,7 @@ def adduser(request):
             LastName=last_name,
             Suffix=suffix,
             Role=role,
+            Email=email,  # <-- Include email here
             Account_Status='inactive'
         )
         new_employee.save()
@@ -1053,6 +1085,7 @@ def adduser(request):
         return redirect('add_user')
 
     return render(request, 'adduser.html')
+
 
 
 def delete_user(request, EmployeeID):
@@ -1142,59 +1175,6 @@ def edituser(request, EmployeeID=None):
     
     return render(request, 'edituser.html', context)
 
-
-def profile(request):
-    user_id = request.session.get('user_id') 
-
-    if not user_id:
-        return redirect('login')  
-    
-    if request.method == 'POST':
-        # Assuming you want to update these fields separately
-        first_name = request.POST.get('FirstName')
-        middle_name = request.POST.get('MiddleName')
-        last_name = request.POST.get('LastName')
-        suffix = request.POST.get('Suffix')
-        username = request.POST.get('Username')
-        password = request.POST.get('Password')
-
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                UPDATE employee SET 
-                    FirstName = %s, 
-                    MiddleName = %s, 
-                    LastName = %s, 
-                    Suffix = %s,
-                    Username = %s, 
-                    Password = %s
-                WHERE EmployeeID = %s
-            """, [first_name, middle_name, last_name, suffix, username, password, user_id])
-
-        return redirect('profile')
-
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT FirstName, MiddleName, LastName, Suffix, Username, Role, Account_Status, Password
-            FROM employee 
-            WHERE EmployeeID = %s
-        """, [user_id])
-        row = cursor.fetchone()
-
-    if not row:
-        return redirect('login') 
-
-    user = {
-        'FirstName': row[0],
-        'MiddleName': row[1],
-        'LastName': row[2],
-        'Suffix': row[3],
-        'Username': row[4],
-        'Role': row[5],
-        'Account_Status': row[6],
-        'Password': row[7],
-    }
-
-    return render(request, 'profile.html', {'user': user})
 
 
 def log_user_action(employee_id, action_type):
@@ -2372,91 +2352,172 @@ def restore_database(request):
         messages.error(request, f"An error occurred: {str(e)}")
 
     return redirect('logs')
-
-
-from django.contrib.auth.hashers import make_password
+import random
+from django.core.mail import send_mail
+from django.contrib import messages
+from django.shortcuts import render, redirect
 from django.db import IntegrityError
-from django.shortcuts import render
-from .models import UserName, UserAddress, Users
+from .models import Employee  # Replace with your actual model if needed
 
 def Process_signup(request):
     if request.method == 'POST':
-        # Personal Info
-        first_name = request.POST.get('first_name', '').strip()
-        middle_name = request.POST.get('middle_name', '').strip()
-        last_name = request.POST.get('last_name', '').strip()
-        suffix = request.POST.get('suffix', '').strip()
+        # ✅ Step 2: Verify OTP
+        if 'otp' in request.POST:
+            entered_otp = request.POST.get('otp')
+            session_otp = request.session.get('signup_otp')
+            user_data = request.session.get('signup_user_data')
 
-        # Credentials
-        username = request.POST.get('username', '').strip()
-        password = request.POST.get('password', '')
-        # confirm_password = request.POST.get('confirm_password', '')  # No longer used
-        # email = request.POST.get('email', '').strip()  # No longer used
+            if not user_data or not session_otp:
+                messages.error(request, "Session expired. Please sign up again.")
+                return redirect('signup')
 
-        # Address Info
-        house_unit_number = request.POST.get('house_unit_number', '').strip()
-        building_name = request.POST.get('building_name', '').strip()
-        street_name = request.POST.get('street_name', '').strip()
-        barangay = request.POST.get('barangay', '').strip()
-        city_municipality = request.POST.get('city_municipality', '').strip()
-        province = request.POST.get('province', '').strip()
-        zip_code = request.POST.get('zip_code', '').strip()
+            if entered_otp == session_otp:
+                try:
+                    Employee.objects.create(
+                        FirstName=user_data['first_name'],
+                        MiddleName=user_data.get('middle_name') or None,
+                        LastName=user_data['last_name'],
+                        Suffix=user_data.get('suffix') or None,
+                        Username=user_data['username'],
+                        Email=user_data['email'],
+                        Password=user_data['password'],  # 🔒 Hash in production
+                        Role='employee',  # ✅ Default role
+                        Account_Status='active'  # ✅ Mark account as active after OTP
+                    )
+                    # Clear session data
+                    request.session.pop('signup_otp', None)
+                    request.session.pop('signup_user_data', None)
+                    messages.success(request, "Account created successfully! You can now log in.")
+                    return redirect('login')  # 🔁 Replace with actual login route name
+                except IntegrityError:
+                    messages.error(request, "Username or Email already exists.")
+                    return render(request, 'signup.html', {'show_otp': True})
+            else:
+                messages.error(request, "Invalid OTP. Please try again.")
+                return render(request, 'signup.html', {'show_otp': True})
 
+        # ✅ Step 1: Collect info and send OTP
+        else:
+            first_name = request.POST.get('first_name', '').strip()
+            middle_name = request.POST.get('middle_name', '').strip()
+            last_name = request.POST.get('last_name', '').strip()
+            suffix = request.POST.get('suffix', '').strip()
+            username = request.POST.get('username', '').strip()
+            email = request.POST.get('email', '').strip()
+            password = request.POST.get('password', '')
 
-        # Contact Info
-        country_code = request.POST.get('country_code', '').strip()
-        mobile_number = request.POST.get('mobile_number', '').strip()
-        full_mobile_number = f"{country_code}{mobile_number}" if country_code and mobile_number else ''
+            if not username or not password or not first_name or not last_name or not email:
+                messages.error(request, "All required fields must be filled.")
+                return render(request, 'signup.html')
 
-        # Validation (no confirm_password, no email)
-        if not username or not password or not first_name or not last_name:
-            return render(request, 'signup.html', {'error': 'All required fields must be filled.'})
+            otp = str(random.randint(100000, 999999))
 
+            request.session['signup_user_data'] = {
+                'first_name': first_name,
+                'middle_name': middle_name,
+                'last_name': last_name,
+                'suffix': suffix,
+                'username': username,
+                'email': email,
+                'password': password,
+            }
+            request.session['signup_otp'] = otp
 
-        try:
-            # Create Name Object
-            name_obj = UserName.objects.create(
-                first_name=first_name,
-                middle_name=middle_name or None,
-                last_name=last_name,
-                suffix=suffix or None
+            subject = "Dragon Ricemill - Your OTP Verification Code"
+            message = (
+                f"Dear {first_name},\n\n"
+                f"Thank you for signing up with Dragon Ricemill.\n"
+                f"Your One-Time Password (OTP) is: {otp}\n\n"
+                f"Please enter this code to verify your email address.\n"
+                f"If you did not request this, please ignore this email.\n\n"
+                f"Best regards,\n"
+                f"Dragon Ricemill Team"
             )
 
-            # Create Address Object
-            address_obj = UserAddress.objects.create(
-                house_unit_number=house_unit_number or None,
-                building_name=building_name or None,
-                street_name=street_name or None,
-                barangay=barangay or None,
-                city_municipality=city_municipality or None,
-                province=province or None,
-                zip_code=zip_code or None
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email='Dragon Ricemill <dragonricemill@gmail.com>',  # ✅ Replace if needed
+                recipient_list=[email],
+                fail_silently=False,
             )
 
-            # Create User
-            # Create as Employee instead of Users
-            Employee.objects.create(
-                FirstName=first_name,
-                MiddleName=middle_name or None,
-                LastName=last_name,
-                Suffix=suffix or None,
-                Username=username,
-                Password=password,  # Not hashed
-                Role='',  # Use empty string instead of None
-                Account_Status='inactive'
-            )
+            messages.info(request, f"An OTP has been sent to {email}. Please enter it below to verify.")
+            return render(request, 'signup.html', {'show_otp': True})
 
-            return render(request, 'signup.html', {
-                'success': True
-            })
-
-        except IntegrityError:
-            return render(request, 'signup.html', {
-                'error': 'Username already exists.'
-            })
-
+    # GET request
     return render(request, 'signup.html')
 
+from django.http import JsonResponse
+from webapp.models import Employee  # ✅ Use Employee model
+
+def check_username(request):
+    username = request.GET.get("username", "").strip()
+    exists = Employee.objects.filter(Username=username).exists()
+    return JsonResponse({"exists": exists})
+
+def check_email(request):
+    email = request.GET.get("email", "").strip()
+    exists = Employee.objects.filter(Email=email).exists()
+    return JsonResponse({"exists": exists})
+
+from django.shortcuts import render, redirect
+from django.db import connection
+
+def profile(request):
+    user_id = request.session.get('user_id') 
+
+    if not user_id:
+        return redirect('login')  
+    
+    if request.method == 'POST':
+        first_name = request.POST.get('FirstName')
+        middle_name = request.POST.get('MiddleName')
+        last_name = request.POST.get('LastName')
+        suffix = request.POST.get('Suffix')
+        username = request.POST.get('Username')
+        email = request.POST.get('Email')  # <-- Added email here
+        password = request.POST.get('Password')
+
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                UPDATE employee SET 
+                    FirstName = %s, 
+                    MiddleName = %s, 
+                    LastName = %s, 
+                    Suffix = %s,
+                    Username = %s,
+                    Email = %s,   -- Added email update
+                    Password = %s
+                WHERE EmployeeID = %s
+            """, [first_name, middle_name, last_name, suffix, username, email, password, user_id])
+
+        return redirect('profile')
+
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT FirstName, MiddleName, LastName, Suffix, Username, Role, Account_Status, Password, Email
+            FROM employee 
+            WHERE EmployeeID = %s
+        """, [user_id])
+        row = cursor.fetchone()
+
+    if not row:
+        return redirect('login') 
+
+    user = {
+        'FirstName': row[0],
+        'MiddleName': row[1],
+        'LastName': row[2],
+        'Suffix': row[3],
+        'Username': row[4],
+        'Role': row[5],
+        'Account_Status': row[6],
+        'Password': row[7],
+        'Email': row[8],  # <-- Add email here
+    }
+
+    return render(request, 'profile.html', {'user': user})
 
 # --- Customer Account Overview View ---
 from .models import CustomerOrder, Users

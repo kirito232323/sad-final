@@ -237,100 +237,106 @@
       </form>
     </div>
 
-    <!-- Edit Form -->
-    {% if selected_user %}
-    <div id="edit-form" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6 fade-in">
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="text-xl font-bold text-gray-900">Edit User: {{ selected_user.Username }}</h2>
-        <button onclick="cancelEdit()" class="text-gray-500 hover:text-gray-700">
-          <i class="fas fa-times"></i>
-        </button>
+<!-- Edit Form -->
+{% if selected_user %}
+<div id="edit-form" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6 fade-in">
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-xl font-bold text-gray-900">Edit User: {{ selected_user.Username }}</h2>
+    <button onclick="cancelEdit()" class="text-gray-500 hover:text-gray-700">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+  <form method="POST" action="{% url 'edituser' selected_user.EmployeeID %}" class="space-y-6">
+    {% csrf_token %}
+
+    <!-- Personal Information -->
+    <div class="space-y-4">
+      <h3 class="text-lg font-semibold text-gray-900 border-b pb-2">
+        <i class="fas fa-user text-yellow-500 mr-2"></i>Personal Information
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+          <input type="text" name="FirstName" value="{{ selected_user.FirstName }}" required
+                 class="w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 py-2 px-3" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Middle Name</label>
+          <input type="text" name="MiddleName" value="{{ selected_user.MiddleName }}"
+                 class="w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 py-2 px-3" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
+          <input type="text" name="LastName" value="{{ selected_user.LastName }}" required
+                 class="w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 py-2 px-3" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Suffix</label>
+          <input type="text" name="Suffix" value="{{ selected_user.Suffix|default_if_none:'' }}"
+                 class="w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 py-2 px-3" />
+        </div>
       </div>
-      <form method="POST" action="{% url 'edituser' selected_user.EmployeeID %}" class="space-y-6">
-        {% csrf_token %}
-        
-        <!-- Personal Information -->
-        <div class="space-y-4">
-          <h3 class="text-lg font-semibold text-gray-900 border-b pb-2">
-            <i class="fas fa-user text-yellow-500 mr-2"></i>Personal Information
-          </h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
-              <input type="text" name="FirstName" value="{{ selected_user.FirstName }}" required
-                     class="w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 py-2 px-3" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Middle Name</label>
-              <input type="text" name="MiddleName" value="{{ selected_user.MiddleName }}"
-                     class="w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 py-2 px-3" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
-              <input type="text" name="LastName" value="{{ selected_user.LastName }}" required
-                     class="w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 py-2 px-3" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Suffix</label>
-              <input type="text" name="Suffix" value="{{ selected_user.Suffix|default_if_none:'' }}"
-                     class="w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 py-2 px-3" />
-            </div>
-          </div>
-        </div>
-
-        <!-- Account Information -->
-        <div class="space-y-4">
-          <h3 class="text-lg font-semibold text-gray-900 border-b pb-2">
-            <i class="fas fa-lock text-yellow-500 mr-2"></i>Account Information
-          </h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Username *</label>
-              <input type="text" name="Username" value="{{ selected_user.Username }}" required
-                     class="w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 py-2 px-3" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Password *</label>
-              <div class="relative">
-                <input type="password" id="password" name="Password" value="{{ selected_user.Password }}" required
-                       class="w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 py-2 px-3 pr-10" />
-                <button type="button" onclick="togglePassword()" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
-                  <i class="fas fa-eye" id="toggleIcon"></i>
-                </button>
-              </div>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Role *</label>
-              <select name="Role" class="w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 py-2" required>
-                <option value="admin" {% if selected_user.Role == "admin" %}selected{% endif %}>Administrator</option>
-                <option value="employee" {% if selected_user.Role == "employee" %}selected{% endif %}>Employee</option>
-                <option value="cashier" {% if selected_user.Role == "cashier" %}selected{% endif %}>Cashier</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Account Status *</label>
-              <select name="Account_Status" class="w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 py-2" required>
-                <option value="active" {% if selected_user.Account_Status == "active" %}selected{% endif %}>Active</option>
-                <option value="inactive" {% if selected_user.Account_Status == "inactive" %}selected{% endif %}>Inactive</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <!-- Form Actions -->
-        <div class="flex justify-end space-x-3 pt-6 border-t">
-          <button type="button" onclick="cancelEdit()" 
-                  class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
-            Cancel
-          </button>
-          <button type="submit"
-                  class="px-6 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
-            Save Changes
-          </button>
-        </div>
-      </form>
     </div>
-    {% endif %}
+
+    <!-- Account Information -->
+    <div class="space-y-4">
+      <h3 class="text-lg font-semibold text-gray-900 border-b pb-2">
+        <i class="fas fa-lock text-yellow-500 mr-2"></i>Account Information
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Username *</label>
+          <input type="text" name="Username" value="{{ selected_user.Username }}" required
+                 class="w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 py-2 px-3" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+          <input type="email" name="Email" value="{{ selected_user.Email }}" required
+                 class="w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 py-2 px-3" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+          <div class="relative">
+            <input type="password" id="password" name="Password" value="{{ selected_user.Password }}" required
+                   class="w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 py-2 px-3 pr-10" />
+            <button type="button" onclick="togglePassword()" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
+              <i class="fas fa-eye" id="toggleIcon"></i>
+            </button>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Role *</label>
+          <select name="Role" class="w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 py-2" required>
+            <option value="admin" {% if selected_user.Role == "admin" %}selected{% endif %}>Administrator</option>
+            <option value="employee" {% if selected_user.Role == "employee" %}selected{% endif %}>Employee</option>
+            <option value="cashier" {% if selected_user.Role == "cashier" %}selected{% endif %}>Cashier</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Account Status *</label>
+          <select name="Account_Status" class="w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 py-2" required>
+            <option value="active" {% if selected_user.Account_Status == "active" %}selected{% endif %}>Active</option>
+            <option value="inactive" {% if selected_user.Account_Status == "inactive" %}selected{% endif %}>Inactive</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="flex justify-end space-x-3 pt-6 border-t">
+      <button type="button" onclick="cancelEdit()" 
+              class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+        Cancel
+      </button>
+      <button type="submit"
+              class="px-6 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+        Save Changes
+      </button>
+    </div>
+  </form>
+</div>
+{% endif %}
+
 
     <!-- Users Table -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden fade-in">

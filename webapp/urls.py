@@ -62,6 +62,9 @@ urlpatterns = [
     path('api/orders-for-customer/<int:customer_id>/', views.orders_for_customer, name='orders_for_customer'),
     path('stock-movement-report/', views.stock_movement_report, name='stock_movement_report'),
     path('edit-customer/<int:user_id>/', views.edit_customer_view, name='edit_customer'),
+    path("check-username/", views.check_username, name="check_username"),
+    path("check-email/", views.check_email, name="check_email"),
+
 ]
 
 
