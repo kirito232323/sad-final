@@ -4,10 +4,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dashboard - Dragon Ricemill</title>
+  <title>User Logs - Dragon Ricemill</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
     html { scroll-behavior: smooth; }
     .dropdown:hover .dropdown-menu {
       opacity: 1;
@@ -16,9 +20,42 @@
     }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    .table-container {
+      @apply rounded-lg border border-gray-200 overflow-hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    
+    .table-header {
+      @apply bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider;
+    }
+    
+    .table-cell {
+      @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900;
+    }
+    
+    .btn {
+      @apply px-4 py-2 rounded-lg font-medium transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+    }
+    
+    .btn-primary {
+      @apply bg-yellow-500 text-white hover:bg-yellow-600 focus:ring-yellow-500;
+    }
+    
+    .btn-secondary {
+      @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500;
+    }
+    
+    .btn-success {
+      @apply bg-green-600 text-white hover:bg-green-700 focus:ring-green-500;
+    }
+    
+    .input-field {
+      @apply border-gray-300 focus:ring-yellow-500 focus:border-yellow-500 block w-full shadow-sm sm:text-sm rounded-lg;
+    }
   </style>
 </head>
-<body class="bg-gray-100 text-gray-800 min-h-screen font-sans leading-relaxed overflow-x-hidden">
+<body class="bg-gray-50 text-gray-800 min-h-screen font-sans leading-relaxed overflow-x-hidden">
 
 <header class="fixed top-0 right-0 h-screen w-56 bg-white shadow-lg flex flex-col z-50 border-l border-gray-200">
   <div class="h-14 flex items-center justify-center border-b border-gray-200">
@@ -128,133 +165,215 @@
 </header>
 
 
-<!-- Push content so it’s not behind the sidebar -->
+<!-- Push content so it's not behind the sidebar -->
 <div class="mr-56 min-h-screen bg-gray-50">
-  <main class="max-w-screen-xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+  <main class="max-w-screen-xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
     
     <!-- Messages -->
     {% if messages %}
-      <div class="mb-6">
+      <div class="mb-6 space-y-2">
         {% for message in messages %}
-          <div class="p-3 mb-2 rounded text-sm font-medium
-            {% if message.tags == 'success' %} bg-green-100 text-green-800
-            {% elif message.tags == 'error' %} bg-red-100 text-red-800
-            {% elif message.tags == 'warning' %} bg-yellow-100 text-yellow-800
-            {% else %} bg-gray-100 text-gray-800
+          <div class="p-4 rounded-lg text-sm font-medium animate-fade-in
+            {% if message.tags == 'success' %} bg-green-100 text-green-800 border border-green-200
+            {% elif message.tags == 'error' %} bg-red-100 text-red-800 border border-red-200
+            {% elif message.tags == 'warning' %} bg-yellow-100 text-yellow-800 border border-yellow-200
+            {% else %} bg-gray-100 text-gray-800 border border-gray-200
             {% endif %}">
-            {{ message }}
+            <div class="flex items-center">
+              <i class="fas {% if message.tags == 'success' %}fa-check-circle text-green-500
+                        {% elif message.tags == 'error' %}fa-exclamation-circle text-red-500
+                        {% elif message.tags == 'warning' %}fa-exclamation-triangle text-yellow-500
+                        {% else %}fa-info-circle text-gray-500{% endif %} mr-3"></i>
+              {{ message }}
+            </div>
           </div>
         {% endfor %}
       </div>
     {% endif %}
 
     <!-- Main Content -->
-    <main class="p-6">
-      <div class="bg-white p-6 rounded-lg shadow-lg max-w-full">
-        <h1 class="text-2xl font-bold mb-6">User Logs</h1>
-
-        <!-- Backup and Restore Buttons -->
-        <div class="flex flex-col sm:flex-row gap-4 mb-6">
-          <form method="post" action="{% url 'backup_database' %}">
+    <div class="bg-white rounded-2xl shadow-lg p-8">
+      <div class="flex justify-between items-center mb-8">
+        <h1 class="text-2xl font-bold text-gray-900">User Logs</h1>
+        <div class="flex space-x-4">
+          <form method="post" action="{% url 'backup_database' %}" class="inline">
             {% csrf_token %}
-            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">
-              Backup Database
+            <button type="submit" class="btn btn-secondary">
+              <i class="fas fa-download mr-2"></i>Backup Database
             </button>
           </form>
 
-          <form method="post" action="{% url 'restore_database' %}" enctype="multipart/form-data" class="flex flex-col sm:flex-row gap-2 sm:items-center">
+          <form method="post" action="{% url 'restore_database' %}" enctype="multipart/form-data" class="inline-flex items-center space-x-2">
             {% csrf_token %}
-            <input type="file" name="backup_file" accept=".sql" required class="border rounded px-3 py-2">
-            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded">
-              Restore Database
+            <div class="relative">
+              <input type="file" name="backup_file" accept=".sql" required 
+                     class="block w-full text-sm text-gray-500
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-lg file:border-0
+                            file:text-sm file:font-medium
+                            file:bg-blue-50 file:text-blue-700
+                            hover:file:bg-blue-100
+                            cursor-pointer">
+            </div>
+            <button type="submit" class="btn btn-success">
+              <i class="fas fa-upload mr-2"></i>Restore
             </button>
           </form>
         </div>
+      </div>
 
-      <form method="get" class="flex flex-col sm:flex-row gap-4 mb-6">
-  <input type="date" name="date" value="{{ request.GET.date }}" class="border px-3 py-2 rounded w-full sm:w-1/3" />
-  <input type="time" name="time" value="{{ request.GET.time }}" class="border px-3 py-2 rounded w-full sm:w-1/3" />
-  <input type="text" name="action" value="{{ request.GET.action }}" placeholder="Filter by Action or Employee Name" class="border px-3 py-2 rounded w-full sm:w-1/3" />
-  <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Filter</button>
-</form>
-
- <!-- User Logs Table -->
-<div class="overflow-x-auto">
-  <table class="min-w-full table-auto border border-gray-300">
-    <thead class="bg-gray-100">
-      <tr>
-        <th class="py-2 px-4 border-b border-gray-300 text-left">Employee</th>
-        <th class="py-2 px-4 border-b border-gray-300 text-left">Role</th>
-        <th class="py-2 px-4 border-b border-gray-300 text-left">Action</th>
-        <th class="py-2 px-4 border-b border-gray-300 text-left">Date</th>
-        <th class="py-2 px-4 border-b border-gray-300 text-left">Time</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for log in logs %}
-        <tr class="log-row"
-            data-date="{{ log.date }}"
-            data-time="{{ log.time }}"
-            data-action="{{ log.details|lower }}"
-            data-employee="{{ log.employee_name|lower }}"
-            data-role="{{ log.role|lower }}">
-          <td class="py-2 px-4 border-b border-gray-300 font-semibold">{{ log.employee_name }}</td>
-          <td class="py-2 px-4 border-b border-gray-300">{{ log.role }}</td>
-          <td class="py-2 px-4 border-b border-gray-300">{{ log.details }}</td>
-          <td class="py-2 px-4 border-b border-gray-300">{{ log.date }}</td>
-          <td class="py-2 px-4 border-b border-gray-300">{{ log.time }}</td>
-        </tr>
-      {% empty %}
-        <tr>
-          <td colspan="5" class="py-4 text-center text-gray-500">No logs found.</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-
-        <!-- Pagination Controls -->
-        {% if page_obj.has_other_pages %}
-        <div class="flex justify-between items-center mt-6">
+      <!-- Filter Form -->
+      <form method="get" class="mb-8 bg-gray-50 p-6 rounded-xl border border-gray-200">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+            <input type="date" name="date" value="{{ request.GET.date }}" 
+                   class="input-field" />
+          </div>
+          <div>
+            <label for="time" class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+            <input type="time" name="time" value="{{ request.GET.time }}" 
+                   class="input-field" />
+          </div>
+          <div class="md:col-span-2">
+            <label for="action" class="block text-sm font-medium text-gray-700 mb-1">Filter by Action or Employee</label>
+            <div class="relative">
+              <input type="text" name="action" value="{{ request.GET.action }}" 
+                     placeholder="Search..." 
+                     class="input-field pl-10" />
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i class="fas fa-search text-gray-400"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4 flex justify-end">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-filter mr-2"></i>Apply Filters
+          </button>
+        </div>
+      </form>
+
+      <!-- User Logs Table -->
+      <div class="table-container">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead>
+              <tr>
+                <th class="table-header px-6 py-3">
+                  <div class="flex items-center">
+                    <i class="fas fa-user mr-2"></i>Employee
+                  </div>
+                </th>
+                <th class="table-header px-6 py-3">
+                  <div class="flex items-center">
+                    <i class="fas fa-user-tag mr-2"></i>Role
+                  </div>
+                </th>
+                <th class="table-header px-6 py-3">
+                  <div class="flex items-center">
+                    <i class="fas fa-clipboard-list mr-2"></i>Action
+                  </div>
+                </th>
+                <th class="table-header px-6 py-3">
+                  <div class="flex items-center">
+                    <i class="fas fa-calendar mr-2"></i>Date
+                  </div>
+                </th>
+                <th class="table-header px-6 py-3">
+                  <div class="flex items-center">
+                    <i class="fas fa-clock mr-2"></i>Time
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              {% for log in logs %}
+                <tr class="log-row hover:bg-gray-50 transition-colors"
+                    data-date="{{ log.date }}"
+                    data-time="{{ log.time }}"
+                    data-action="{{ log.details|lower }}"
+                    data-employee="{{ log.employee_name|lower }}"
+                    data-role="{{ log.role|lower }}">
+                  <td class="table-cell font-medium">{{ log.employee_name }}</td>
+                  <td class="table-cell">
+                    <span class="px-2 py-1 text-xs font-medium rounded-full
+                      {% if log.role == 'admin' %} bg-purple-100 text-purple-800
+                      {% elif log.role == 'employee' %} bg-blue-100 text-blue-800
+                      {% elif log.role == 'cashier' %} bg-green-100 text-green-800
+                      {% else %} bg-gray-100 text-gray-800{% endif %}">
+                      {{ log.role }}
+                    </span>
+                  </td>
+                  <td class="table-cell">{{ log.details }}</td>
+                  <td class="table-cell">{{ log.date }}</td>
+                  <td class="table-cell">{{ log.time }}</td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                    <div class="flex flex-col items-center">
+                      <i class="fas fa-inbox text-4xl mb-2"></i>
+                      <span class="font-medium">No logs found</span>
+                      <p class="text-sm text-gray-400">Try adjusting your filters</p>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      {% if page_obj.has_other_pages %}
+      <div class="mt-6 flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+        <div class="flex flex-1 justify-between sm:hidden">
+          {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-secondary">Previous</a>
+          {% endif %}
+          {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="btn btn-secondary">Next</a>
+          {% endif %}
+        </div>
+        <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+          <div>
+            <p class="text-sm text-gray-700">
+              Showing page <span class="font-medium">{{ page_obj.number }}</span> of
+              <span class="font-medium">{{ page_obj.paginator.num_pages }}</span>
+            </p>
           </div>
           <div class="flex space-x-2">
             {% if page_obj.has_previous %}
-              <a href="?page=1" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">First</a>
-              <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Previous</a>
+              <a href="?page=1" class="btn btn-secondary text-sm">First</a>
+              <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-secondary text-sm">Previous</a>
             {% endif %}
 
             {% for num in page_obj.paginator.page_range %}
               {% if num == page_obj.number %}
-                <span class="px-3 py-1 bg-blue-500 text-white rounded">{{ num }}</span>
+                <span class="btn bg-yellow-500 text-white text-sm cursor-default">{{ num }}</span>
               {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                <a href="?page={{ num }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">{{ num }}</a>
+                <a href="?page={{ num }}" class="btn btn-secondary text-sm">{{ num }}</a>
               {% endif %}
             {% endfor %}
 
             {% if page_obj.has_next %}
-              <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Next</a>
-              <a href="?page={{ page_obj.paginator.num_pages }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Last</a>
+              <a href="?page={{ page_obj.next_page_number }}" class="btn btn-secondary text-sm">Next</a>
+              <a href="?page={{ page_obj.paginator.num_pages }}" class="btn btn-secondary text-sm">Last</a>
             {% endif %}
           </div>
         </div>
-        {% endif %}
-
       </div>
-    </main>
+      {% endif %}
+    </div>
   </main>
 </div>
 
-
-
-
-<!-- JavaScript for Live Filtering -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-  const dateInput = document.getElementById('filter-date');
-  const timeInput = document.getElementById('filter-time');
-  const actionInput = document.getElementById('filter-action');
+  const dateInput = document.querySelector('input[name="date"]');
+  const timeInput = document.querySelector('input[name="time"]');
+  const actionInput = document.querySelector('input[name="action"]');
 
   function filterLogs() {
     const dateVal = dateInput.value;
@@ -265,10 +384,15 @@ document.addEventListener("DOMContentLoaded", function () {
       const rowDate = row.dataset.date;
       const rowTime = row.dataset.time;
       const rowAction = row.dataset.action;
+      const rowEmployee = row.dataset.employee;
+      const rowRole = row.dataset.role;
 
       const matchDate = !dateVal || rowDate === dateVal;
       const matchTime = !timeVal || rowTime === timeVal;
-      const matchAction = !actionVal || rowAction.includes(actionVal);
+      const matchAction = !actionVal || 
+                         rowAction.includes(actionVal) || 
+                         rowEmployee.includes(actionVal) ||
+                         rowRole.includes(actionVal);
 
       row.style.display = (matchDate && matchTime && matchAction) ? '' : 'none';
     });

@@ -4,10 +4,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dashboard - Dragon Ricemill</title>
+  <title>Invoice - Dragon Ricemill</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
     html { scroll-behavior: smooth; }
     .dropdown:hover .dropdown-menu {
       opacity: 1;
@@ -16,9 +20,118 @@
     }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .invoice-container {
+      @apply bg-white rounded-2xl shadow-lg p-8;
+      {% if not export_mode %}max-width: 800px;{% endif %}
+    }
+
+    .invoice-header {
+      @apply text-3xl font-bold text-center text-gray-800 mb-8;
+    }
+
+    .field-group {
+      @apply mb-6 last:mb-0;
+    }
+
+    .field-label {
+      @apply block text-sm font-medium text-gray-600 mb-1;
+    }
+
+    .field-value {
+      @apply text-gray-900 font-medium;
+    }
+
+    .field-input {
+      @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition duration-200;
+    }
+
+    .field-select {
+      @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent bg-white transition duration-200;
+    }
+
+    .btn {
+      @apply px-6 py-2.5 rounded-lg font-medium transition duration-200 inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-offset-2 transform hover:scale-105;
+    }
+
+    .btn-primary {
+      @apply bg-yellow-500 text-white hover:bg-yellow-600 focus:ring-yellow-500;
+    }
+
+    .btn-secondary {
+      @apply bg-green-600 text-white hover:bg-green-700 focus:ring-green-500;
+    }
+
+    .details-section {
+      @apply mt-8 p-6 bg-gray-50 rounded-xl border border-gray-200;
+    }
+
+    .details-grid {
+      @apply grid grid-cols-1 md:grid-cols-2 gap-4;
+    }
+
+    .detail-item {
+      @apply flex flex-col space-y-1;
+    }
+
+    .payment-info {
+      @apply mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200;
+    }
+
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+    }
+
+    .invoice-box {
+      @apply relative bg-white rounded-2xl shadow-lg p-8 border border-gray-100;
+    }
+
+    .invoice-box::before {
+      content: '';
+      @apply absolute inset-0 border-2 border-yellow-500/20 rounded-2xl -m-1 pointer-events-none;
+    }
+
+    .invoice-watermark {
+      @apply absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-9xl text-gray-50/20 pointer-events-none select-none;
+      font-family: 'Inter', sans-serif;
+      z-index: 0;
+    }
+
+    .invoice-content {
+      @apply relative z-10;
+    }
+
+    .corner-decoration {
+      @apply absolute w-16 h-16 border-2 border-yellow-500/30 pointer-events-none;
+    }
+
+    .corner-decoration-tl {
+      @apply top-4 left-4 border-r-0 border-b-0;
+      border-top-left-radius: 0.5rem;
+    }
+
+    .corner-decoration-tr {
+      @apply top-4 right-4 border-l-0 border-b-0;
+      border-top-right-radius: 0.5rem;
+    }
+
+    .corner-decoration-bl {
+      @apply bottom-4 left-4 border-r-0 border-t-0;
+      border-bottom-left-radius: 0.5rem;
+    }
+
+    .corner-decoration-br {
+      @apply bottom-4 right-4 border-l-0 border-t-0;
+      border-bottom-right-radius: 0.5rem;
+    }
   </style>
 </head>
-<body class="bg-gray-100 text-gray-800 min-h-screen font-sans leading-relaxed overflow-x-hidden">
+<body class="bg-gray-50 text-gray-800 min-h-screen font-sans leading-relaxed overflow-x-hidden">
 
 <header class="fixed top-0 right-0 h-screen w-56 bg-white shadow-lg flex flex-col z-50 border-l border-gray-200">
   <div class="h-14 flex items-center justify-center border-b border-gray-200">
@@ -116,79 +229,143 @@
   </nav>
 </header>
 
-<main class="{% if not export_mode %}ml-56 p-6{% endif %}">
-  <div class="{% if not export_mode %}max-w-2xl ml-0 bg-white p-6 rounded shadow{% endif %}">
-    <h1 class="text-2xl font-bold mb-4 text-center">Invoice</h1>
+<main class="{% if not export_mode %}mr-64 p-8{% endif %}">
+  <div class="max-w-4xl mx-auto">
+    <div class="invoice-box">
+      <!-- Corner Decorations -->
+      <div class="corner-decoration corner-decoration-tl"></div>
+      <div class="corner-decoration corner-decoration-tr"></div>
+      <div class="corner-decoration corner-decoration-bl"></div>
+      <div class="corner-decoration corner-decoration-br"></div>
 
-    <form id="invoiceForm" method="POST">
-      {% csrf_token %}
+      <!-- Watermark -->
+      <div class="invoice-watermark">INVOICE</div>
 
-      <!-- Invoice Number -->
-      <div class="mb-4">
-        <label class="block font-semibold">Invoice Number:</label>
-        <input type="text" name="invoice_number" value="{{ invoice_number }}" readonly
-               class="w-full p-2 border rounded bg-gray-100" />
+      <!-- Invoice Content -->
+      <div class="invoice-content">
+        <div class="flex items-center justify-between mb-8">
+          <div class="flex items-center space-x-3">
+            <span class="text-yellow-500 text-3xl">🌾</span>
+            <div>
+              <h1 class="text-2xl font-bold text-gray-900">Invoice</h1>
+              <p class="text-sm text-gray-500">Dragon Ricemill</p>
+            </div>
+          </div>
+          <div class="text-right">
+            <p class="text-sm text-gray-600">Invoice Number:</p>
+            <p class="text-lg font-bold text-gray-900">#{{ invoice_number }}</p>
+            <p class="text-sm text-gray-500">{{ order.created_at|date:"F j, Y" }}</p>
+          </div>
+        </div>
+
+        <form id="invoiceForm" method="POST" class="space-y-6">
+          {% csrf_token %}
+
+          {% if not export_mode %}
+          <div class="field-group">
+            <form method="GET" action="{% url 'invoice' %}" class="mb-6">
+              <label class="field-label">Select Order</label>
+              <div class="relative">
+                <select name="order_id" class="field-select pl-10" onchange="this.form.submit()">
+                  <option value="">-- Select Order --</option>
+                  {% for o in orders %}
+                  <option value="{{ o.order_id }}" {% if order and o.order_id == order.order_id %}selected{% endif %}>
+                    Order #{{ o.order_id }} - {{ o.customer.name|default:"No Customer" }}
+                  </option>
+                  {% endfor %}
+                </select>
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <i class="fas fa-shopping-cart text-gray-400"></i>
+                </div>
+              </div>
+            </form>
+          </div>
+          {% endif %}
+
+          {% if order %}
+          <div class="details-section">
+            <div class="mb-6">
+              <h3 class="text-lg font-semibold text-gray-700 mb-4">Order Details</h3>
+              <div class="details-grid">
+                <div class="detail-item">
+                  <span class="field-label">Customer Name</span>
+                  <span class="field-value">{{ order.customer.name|default:"N/A" }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="field-label">Address</span>
+                  <span class="field-value">{{ order.customer.address|default:"N/A" }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="field-label">Rice Type</span>
+                  <span class="field-value">{{ order.rice_type.rice_type }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="field-label">Quantity</span>
+                  <span class="field-value">{{ order.quantity }} sack(s)</span>
+                </div>
+                <div class="detail-item">
+                  <span class="field-label">Cost Per Sack</span>
+                  <span class="field-value">₱{{ order.cost_per_sack|floatformat:2 }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="field-label">Discount</span>
+                  <span class="field-value">{{ order.discount }}%</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="payment-info">
+              <h3 class="text-lg font-semibold text-gray-700 mb-4">Payment Information</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p class="field-label">Payment Method</p>
+                  <p class="field-value">{{ order.payment_method|capfirst }}</p>
+                  
+                  {% if order.payment_method in 'gcash credit_card' and order.reference_code %}
+                  <p class="mt-2">
+                    <span class="field-label">Reference Number</span>
+                    <span class="field-value text-blue-700">{{ order.reference_code }}</span>
+                  </p>
+                  {% endif %}
+                </div>
+                
+                <div class="space-y-2">
+                  <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                    <span class="field-label">Total Cost:</span>
+                    <span class="text-lg font-bold text-gray-900">₱{{ order.total_cost|floatformat:2|intcomma }}</span>
+                  </div>
+                  <div class="flex justify-between items-center py-2">
+                    <span class="field-label">Amount Paid:</span>
+                    <span class="field-value">₱{{ order.amount_paid|floatformat:2 }}</span>
+                  </div>
+                  <div class="flex justify-between items-center py-2 border-t border-gray-200">
+                    <span class="field-label">Change:</span>
+                    <span class="field-value">₱{{ order.amount_change|floatformat:2 }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end space-x-4 mt-8">
+            <form method="POST" action="{% url 'invoice' %}" target="_blank" class="inline">
+              {% csrf_token %}
+              <input type="hidden" name="order_id" value="{{ order.order_id }}">
+              <button type="submit" name="export_pdf" value="true" class="btn btn-secondary">
+                <i class="fas fa-file-pdf mr-2"></i>Export PDF
+              </button>
+            </form>
+
+            <a href="{% url 'invoice' %}?order_id={{ order.order_id }}" 
+               target="_blank" 
+               class="btn btn-primary">
+              <i class="fas fa-print mr-2"></i>Print Invoice
+            </a>
+          </div>
+          {% endif %}
+        </form>
       </div>
-
-      <!-- Order Dropdown -->
-      {% if not export_mode %}
-      <div class="mb-4">
-        <label class="block font-semibold">Select Order:</label>
-        <select name="order_id" class="w-full p-2 border rounded" onchange="document.getElementById('invoiceForm').submit();">
-          <option value="">-- Select Order --</option>
-          {% for o in orders %}
-          <option value="{{ o.order_id }}" {% if order and o.order_id == order.order_id %}selected{% endif %}>
-            Order #{{ o.order_id }} - {{ o.customer.name|default:"No Customer" }}
-          </option>
-          {% endfor %}
-        </select>
-      </div>
-      {% endif %}
-
-      <!-- Order Details -->
-      {% if order %}
-      <div class="mt-4 border-t pt-4">
-        <p class="field"><strong>Customer:</strong> {{ order.customer.name|default:"N/A" }}</p>
-        <p class="field"><strong>Address:</strong> {{ order.customer.address|default:"N/A" }}</p>
-        <p class="field"><strong>Rice Type:</strong> {{ order.rice_type.rice_type }}</p>
-        <p class="field"><strong>Quantity:</strong> {{ order.quantity }} sack(s)</p>
-        <p class="field"><strong>Cost Per Sack:</strong> ₱{{ order.cost_per_sack|floatformat:2 }}</p>
-        <p class="field"><strong>Discount:</strong> {{ order.discount }}%</p>
-        <p class="field"><strong>Total Cost:</strong> ₱{{ order.total_cost|floatformat:2|intcomma }}</p>
-        <p class="field"><strong>Payment Method:</strong> {{ order.payment_method|capfirst }}</p>
-
-        {% if order.payment_method in 'gcash credit_card' and order.reference_code %}
-        <p class="field text-blue-700"><strong>Reference Number:</strong> {{ order.reference_code }}</p>
-        {% endif %}
-
-        <p class="field"><strong>Amount Paid:</strong> ₱{{ order.amount_paid|floatformat:2 }}</p>
-        <p class="field"><strong>Change:</strong> ₱{{ order.amount_change|floatformat:2 }}</p>
-      </div>
-      {% endif %}
-    </form>
-
-    <!-- Export PDF button -->
-    <form method="POST" action="{% url 'invoice' %}" target="_blank" class="inline">
-      {% csrf_token %}
-      <input type="hidden" name="order_id" value="{{ order.order_id }}">
-      <button
-        type="submit"
-        name="export_pdf"
-        value="true"
-        class="mt-4 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded"
-      >
-        Export PDF
-      </button>
-    </form>
-
-    <!-- Print Invoice button -->
-    <a
-      href="{% url 'invoice' %}?order_id={{ order.order_id }}"
-      target="_blank"
-      class="mt-4 ml-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded inline-block"
-    >
-      Print Invoice
-    </a>
+    </div>
   </div>
 </main>
 

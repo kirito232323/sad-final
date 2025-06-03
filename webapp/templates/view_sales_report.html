@@ -4,10 +4,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dashboard - Dragon Ricemill</title>
+  <title>Sales Report - Dragon Ricemill</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
     html { scroll-behavior: smooth; }
     .dropdown:hover .dropdown-menu {
       opacity: 1;
@@ -16,9 +20,54 @@
     }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .report-tab {
+      @apply pb-2 px-4 font-medium transition-colors duration-200 relative;
+    }
+
+    .report-tab::after {
+      content: '';
+      @apply absolute bottom-0 left-0 w-full h-0.5 bg-yellow-500 transform scale-x-0 transition-transform duration-200;
+    }
+
+    .report-tab.active {
+      @apply text-yellow-600 font-semibold;
+    }
+
+    .report-tab.active::after {
+      @apply scale-x-100;
+    }
+
+    .report-tab:hover::after {
+      @apply scale-x-100;
+    }
+
+    .filter-input {
+      @apply border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition duration-200;
+    }
+
+    .stats-card {
+      @apply bg-white rounded-xl p-6 shadow-sm border border-gray-100 transition-transform duration-200 hover:transform hover:scale-102;
+    }
+
+    .table-container {
+      @apply bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden;
+    }
+
+    .table-header {
+      @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+    }
+
+    .table-cell {
+      @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900;
+    }
+
+    .export-btn {
+      @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors duration-200;
+    }
   </style>
 </head>
-<body class="bg-gray-100 text-gray-800 min-h-screen font-sans leading-relaxed overflow-x-hidden">
+<body class="bg-gray-50 text-gray-800 min-h-screen font-sans leading-relaxed overflow-x-hidden">
 
 <header class="fixed top-0 right-0 h-screen w-56 bg-white shadow-lg flex flex-col z-50 border-l border-gray-200">
   <div class="h-14 flex items-center justify-center border-b border-gray-200">
@@ -128,7 +177,7 @@
 </header>
 
 
-<!-- Push content so it’s not behind the sidebar -->
+<!-- Push content so it's not behind the sidebar -->
 <div class="mr-56 min-h-screen bg-gray-50">
   <main class="max-w-screen-xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
     <!-- Messages -->
@@ -155,149 +204,200 @@
 </nav>
 
 <!-- Page Content -->
-<main class="max-w-7xl mx-auto p-6">
-
-  <h2 class="text-2xl font-bold mb-6">Reports</h2>
+<main class="max-w-7xl mx-auto p-8">
+  <div class="mb-8">
+    <h2 class="text-3xl font-bold text-gray-900">Sales Reports</h2>
+    <p class="mt-1 text-sm text-gray-500">View and analyze your sales data</p>
+  </div>
 
   <!-- Report Type Tabs -->
-  <div class="mb-6 flex space-x-4 border-b border-gray-300">
-    <button id="sales-report-tab" class="pb-2 border-b-2 border-blue-600 font-semibold text-blue-600" onclick="showReport('sales')">
-      Sales Reports
-    </button>
-    <button id="stock-movement-tab" class="pb-2 border-b-2 border-transparent text-gray-600 hover:text-blue-600" onclick="showReport('stock')">
-      Stock Movement Reports
-    </button>
+  <div class="mb-8 border-b border-gray-200">
+    <nav class="flex space-x-8" aria-label="Report Types">
+      <button id="sales-report-tab" class="report-tab active" onclick="showReport('sales')">
+        <i class="fas fa-chart-line mr-2"></i>Sales Reports
+      </button>
+      <button id="stock-movement-tab" class="report-tab" onclick="showReport('stock')">
+        <i class="fas fa-box mr-2"></i>Stock Movement Reports
+      </button>
+    </nav>
   </div>
 
+  <!-- Sales Report Filters -->
+  <div id="sales-report-filters" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div>
+        <label for="group-by" class="block text-sm font-medium text-gray-700 mb-1">Group By</label>
+        <select id="group-by" class="filter-input w-full" onchange="applyFilters()">
+          <option value="rice_type" {% if group_by == 'rice_type' %}selected{% endif %}>Rice Type</option>
+          <option value="cashier" {% if group_by == 'cashier' %}selected{% endif %}>Cashier</option>
+        </select>
+      </div>
 
-<!-- Sales Report Filters -->
-<div id="sales-report-filters" class="mb-4 flex flex-wrap items-center gap-4">
-  <label for="group-by" class="font-medium">Group By:</label>
-  <select id="group-by" class="border border-gray-300 rounded px-2 py-1" onchange="applyFilters()">
-    <option value="rice_type" {% if group_by == 'rice_type' %}selected{% endif %}>Rice Type</option>
-    <option value="cashier" {% if group_by == 'cashier' %}selected{% endif %}>Cashier</option>
-  </select>
+      <div>
+        <label for="start-date" class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+        <input type="date" id="start-date" value="{{ start_date }}" class="filter-input w-full" onchange="applyFilters()">
+      </div>
 
-  <label for="start-date" class="font-medium">Start Date:</label>
-  <input type="date" id="start-date" value="{{ start_date }}" class="border border-gray-300 rounded px-2 py-1" onchange="applyFilters()">
+      <div>
+        <label for="end-date" class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+        <input type="date" id="end-date" value="{{ end_date }}" class="filter-input w-full" onchange="applyFilters()">
+      </div>
 
-  <label for="end-date" class="font-medium">End Date:</label>
-  <input type="date" id="end-date" value="{{ end_date }}" class="border border-gray-300 rounded px-2 py-1" onchange="applyFilters()">
-
-  <label for="sales-period" class="font-medium">Period:</label>
-  <select id="sales-period" class="border border-gray-300 rounded px-2 py-1" onchange="applyFilters()">
-    <option value="">-- Select Period --</option>
-    <option value="daily" {% if sales_period == 'daily' %}selected{% endif %}>Daily</option>
-    <option value="weekly" {% if sales_period == 'weekly' %}selected{% endif %}>Weekly</option>
-    <option value="monthly" {% if sales_period == 'monthly' %}selected{% endif %}>Monthly</option>
-  </select>
-</div>
-
-
-  <div class="mt-6 bg-gray-50 p-4 rounded-lg shadow">
-  <h4 class="text-lg font-bold mb-2">Sales Highlights</h4>
-  {% if best_selling and low_selling %}
-    <p><span class="font-medium">Best-Selling Rice Type:</span> {{ best_selling.rice_type__rice_type }} ({{ best_selling.total_quantity }} sacks)</p>
-    <p><span class="font-medium">Lowest-Selling Rice Type:</span> {{ low_selling.rice_type__rice_type }} ({{ low_selling.total_quantity }} sacks)</p>
-  {% else %}
-    <p class="text-gray-500">No sales data available for selected filters.</p>
-  {% endif %}
-</div>
-
-<!-- Sales Report Table & Export -->
-<div id="sales-report-section" class="bg-white p-6 rounded-lg shadow overflow-x-auto">
-  <div class="flex justify-between items-center mb-4">
-    <h3 class="text-lg font-semibold">Summary Table</h3>
-    <button onclick="exportSalesReportToExcel('sales-report-table')" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 text-sm">
-      Export to Excel
-    </button>
-  </div>
-  <table id="sales-report-table" class="min-w-full table-auto border border-gray-200">
-    <thead class="bg-gray-100">
-      <tr>
-        <th class="px-4 py-2 border">
-          {% if group_by == 'cashier' %}
-            Cashier
-          {% else %}
-            Rice Type
-          {% endif %}
-        </th>
-        <th class="px-4 py-2 border">Date</th>
-        <th class="px-4 py-2 border">Total Quantity Sold</th>
-        <th class="px-4 py-2 border">Total Revenue (₱)</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for row in report_data %}
-        <tr class="text-center">
-          <td class="px-4 py-2 border">
-            {% if group_by == 'cashier' %}
-              {{ row.employee_full_name }}
-            {% else %}
-              {{ row.rice_type__rice_type }}
-            {% endif %}
-          </td>
-          <td class="px-4 py-2 border">
-{{ row.created_date|date:"M d, Y" }}
-          </td>
-          <td class="px-4 py-2 border">{{ row.total_quantity }}</td>
-          <td class="px-4 py-2 border">₱{{ row.total_revenue|floatformat:2 }}</td>
-        </tr>
-      {% empty %}
-        <tr>
-          <td colspan="4" class="text-center py-4">No data found for selected filters.</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-
-
-
-
-
-<!-- Stock Movement Report Section (hidden by default) -->
-<div id="stock-movement-section" class="hidden bg-white p-6 rounded-lg shadow overflow-x-auto">
-  <div class="flex justify-between items-center mb-4">
-    <h3 class="text-lg font-semibold text-gray-800">Stock Movement Summary</h3>
-    <button onclick="exportStockMovementToExcel('stock-movement-table')" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 text-sm">
-      Export to Excel
-    </button>
+      <div>
+        <label for="sales-period" class="block text-sm font-medium text-gray-700 mb-1">Period</label>
+        <select id="sales-period" class="filter-input w-full" onchange="applyFilters()">
+          <option value="">-- Select Period --</option>
+          <option value="daily" {% if sales_period == 'daily' %}selected{% endif %}>Daily</option>
+          <option value="weekly" {% if sales_period == 'weekly' %}selected{% endif %}>Weekly</option>
+          <option value="monthly" {% if sales_period == 'monthly' %}selected{% endif %}>Monthly</option>
+        </select>
+      </div>
+    </div>
   </div>
 
-<table id="stock-movement-table" class="min-w-full table-auto border border-gray-200">
-  <thead class="bg-gray-100">
-    <tr>
-      <th class="px-4 py-2 border">Rice Type</th>
-      <th class="px-4 py-2 border">Packaging</th>
-      <th class="px-4 py-2 border">Stock In</th>
-      <th class="px-4 py-2 border">Stock Out</th>
-      <th class="px-4 py-2 border">Current Stock</th>
-      <th class="px-4 py-2 border">Last Updated</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for item in stock_movement_data %}
-    <tr class="text-center">
-      <td class="px-4 py-2 border">{{ item.rice_type.rice_type }}</td>
-      <td class="px-4 py-2 border">{{ item.packaging }}</td>
-      <td class="px-4 py-2 border">{{ item.stock_in }}</td>
-      <td class="px-4 py-2 border">{{ item.stock_out }}</td>
-      <td class="px-4 py-2 border">{{ item.current_stock }}</td>
-      <td class="px-4 py-2 border">{{ item.last_updated|date:"Y-m-d H:i" }}</td>
-    </tr>
-    {% empty %}
-    <tr>
-      <td colspan="6" class="text-center py-4">No stock data available.</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-</div>
+  <!-- Sales Highlights -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    {% if best_selling and low_selling %}
+    <div class="stats-card">
+      <div class="flex items-center">
+        <div class="p-3 rounded-lg bg-green-100 text-green-600">
+          <i class="fas fa-arrow-up text-xl"></i>
+        </div>
+        <div class="ml-4">
+          <h4 class="text-sm font-medium text-gray-500">Best-Selling Rice Type</h4>
+          <p class="text-lg font-semibold text-gray-900">{{ best_selling.rice_type__rice_type }}</p>
+          <p class="text-sm text-gray-500">{{ best_selling.total_quantity }} sacks sold</p>
+        </div>
+      </div>
+    </div>
 
+    <div class="stats-card">
+      <div class="flex items-center">
+        <div class="p-3 rounded-lg bg-red-100 text-red-600">
+          <i class="fas fa-arrow-down text-xl"></i>
+        </div>
+        <div class="ml-4">
+          <h4 class="text-sm font-medium text-gray-500">Lowest-Selling Rice Type</h4>
+          <p class="text-lg font-semibold text-gray-900">{{ low_selling.rice_type__rice_type }}</p>
+          <p class="text-sm text-gray-500">{{ low_selling.total_quantity }} sacks sold</p>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="stats-card col-span-2">
+      <div class="flex items-center justify-center text-gray-500">
+        <i class="fas fa-chart-bar text-3xl mr-3"></i>
+        <p class="text-lg">No sales data available for selected filters</p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
 
-  <script>
+  <!-- Sales Report Table -->
+  <div id="sales-report-section" class="table-container">
+    <div class="p-6 border-b border-gray-100">
+      <div class="flex justify-between items-center">
+        <h3 class="text-lg font-semibold text-gray-900">Sales Summary</h3>
+        <button onclick="exportSalesReportToExcel('sales-report-table')" class="export-btn">
+          <i class="fas fa-download mr-2"></i>Export to Excel
+        </button>
+      </div>
+    </div>
 
+    <div class="overflow-x-auto">
+      <table id="sales-report-table" class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="table-header">
+              {% if group_by == 'cashier' %}Cashier{% else %}Rice Type{% endif %}
+            </th>
+            <th class="table-header">Date</th>
+            <th class="table-header text-right">Quantity Sold</th>
+            <th class="table-header text-right">Revenue</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          {% for row in report_data %}
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="table-cell font-medium">
+              {% if group_by == 'cashier' %}
+                {{ row.employee_full_name }}
+              {% else %}
+                {{ row.rice_type__rice_type }}
+              {% endif %}
+            </td>
+            <td class="table-cell">{{ row.created_date|date:"M d, Y" }}</td>
+            <td class="table-cell text-right">{{ row.total_quantity }}</td>
+            <td class="table-cell text-right font-medium">₱{{ row.total_revenue|floatformat:2|intcomma }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4" class="px-6 py-8 text-center text-gray-500">
+              <div class="flex flex-col items-center">
+                <i class="fas fa-chart-pie text-4xl mb-2"></i>
+                <p class="text-lg font-medium">No data available</p>
+                <p class="text-sm">Try adjusting your filters</p>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Stock Movement Report Section -->
+  <div id="stock-movement-section" class="hidden">
+    <div class="table-container">
+      <div class="p-6 border-b border-gray-100">
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-semibold text-gray-900">Stock Movement Summary</h3>
+          <button onclick="exportStockMovementToExcel('stock-movement-table')" class="export-btn">
+            <i class="fas fa-download mr-2"></i>Export to Excel
+          </button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table id="stock-movement-table" class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="table-header">Rice Type</th>
+              <th class="table-header">Packaging</th>
+              <th class="table-header text-right">Stock In</th>
+              <th class="table-header text-right">Stock Out</th>
+              <th class="table-header text-right">Current Stock</th>
+              <th class="table-header">Last Updated</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            {% for item in stock_movement_data %}
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="table-cell font-medium">{{ item.rice_type.rice_type }}</td>
+              <td class="table-cell">{{ item.packaging }}</td>
+              <td class="table-cell text-right">{{ item.stock_in }}</td>
+              <td class="table-cell text-right">{{ item.stock_out }}</td>
+              <td class="table-cell text-right">{{ item.current_stock }}</td>
+              <td class="table-cell">{{ item.last_updated|date:"Y-m-d H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                <div class="flex flex-col items-center">
+                  <i class="fas fa-box-open text-4xl mb-2"></i>
+                  <p class="text-lg font-medium">No stock movement data available</p>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
 function applyFilters() {
   const groupBy = document.getElementById('group-by').value;
   const startDate = document.getElementById('start-date').value;
@@ -315,86 +415,85 @@ function applyFilters() {
   window.location.search = params.toString();
 }
 
-  // Switch between sales report and stock movement report views
-  function showReport(reportType) {
-    const salesTab = document.getElementById('sales-report-tab');
-    const stockTab = document.getElementById('stock-movement-tab');
-    const salesSection = document.getElementById('sales-report-section');
-    const stockSection = document.getElementById('stock-movement-section');
-    const salesFilters = document.getElementById('sales-report-filters');
+// Switch between sales report and stock movement report views
+function showReport(reportType) {
+  const salesTab = document.getElementById('sales-report-tab');
+  const stockTab = document.getElementById('stock-movement-tab');
+  const salesSection = document.getElementById('sales-report-section');
+  const stockSection = document.getElementById('stock-movement-section');
+  const salesFilters = document.getElementById('sales-report-filters');
 
-    if(reportType === 'sales') {
-      salesSection.classList.remove('hidden');
-      stockSection.classList.add('hidden');
-      salesFilters.classList.remove('hidden');
+  if(reportType === 'sales') {
+    salesSection.classList.remove('hidden');
+    stockSection.classList.add('hidden');
+    salesFilters.classList.remove('hidden');
 
-      salesTab.classList.add('border-blue-600', 'text-blue-600', 'font-semibold');
-      salesTab.classList.remove('border-transparent', 'text-gray-600');
-      stockTab.classList.remove('border-blue-600', 'text-blue-600', 'font-semibold');
-      stockTab.classList.add('border-transparent', 'text-gray-600');
-    } else {
-      salesSection.classList.add('hidden');
-      stockSection.classList.remove('hidden');
-      salesFilters.classList.add('hidden');
+    salesTab.classList.add('border-blue-600', 'text-blue-600', 'font-semibold');
+    salesTab.classList.remove('border-transparent', 'text-gray-600');
+    stockTab.classList.remove('border-blue-600', 'text-blue-600', 'font-semibold');
+    stockTab.classList.add('border-transparent', 'text-gray-600');
+  } else {
+    salesSection.classList.add('hidden');
+    stockSection.classList.remove('hidden');
+    salesFilters.classList.add('hidden');
 
-      stockTab.classList.add('border-blue-600', 'text-blue-600', 'font-semibold');
-      stockTab.classList.remove('border-transparent', 'text-gray-600');
-      salesTab.classList.remove('border-blue-600', 'text-blue-600', 'font-semibold');
-      salesTab.classList.add('border-transparent', 'text-gray-600');
-    }
+    stockTab.classList.add('border-blue-600', 'text-blue-600', 'font-semibold');
+    stockTab.classList.remove('border-transparent', 'text-gray-600');
+    salesTab.classList.remove('border-blue-600', 'text-blue-600', 'font-semibold');
+    salesTab.classList.add('border-transparent', 'text-gray-600');
   }
+}
 
-  // Placeholder: You can implement AJAX or form submission to filter sales report by period
-  function filterSalesReport() {
-    const period = document.getElementById('sales-period').value;
-    // TODO: Trigger backend filtering by period and refresh table data via AJAX or page reload
-    alert(`Filtering sales report by: ${period} (implement backend filtering)`);
+// Placeholder: You can implement AJAX or form submission to filter sales report by period
+function filterSalesReport() {
+  const period = document.getElementById('sales-period').value;
+  // TODO: Trigger backend filtering by period and refresh table data via AJAX or page reload
+  alert(`Filtering sales report by: ${period} (implement backend filtering)`);
+}
+
+// Export functions (reuse your existing XLSX export for stock movement too)
+function exportSalesReportToExcel(tableID, filename = '') {
+  const table = document.getElementById(tableID);
+  if (!table) {
+    alert('Table not found!');
+    return;
   }
-
-  // Export functions (reuse your existing XLSX export for stock movement too)
-  function exportSalesReportToExcel(tableID, filename = '') {
-    const table = document.getElementById(tableID);
-    if (!table) {
-      alert('Table not found!');
-      return;
+  const exportTable = table.cloneNode(true);
+  const rows = exportTable.querySelectorAll('tbody tr');
+  rows.forEach(row => {
+    if (row.textContent.includes('No data found')) {
+      row.parentNode.removeChild(row);
     }
-    const exportTable = table.cloneNode(true);
-    const rows = exportTable.querySelectorAll('tbody tr');
-    rows.forEach(row => {
-      if (row.textContent.includes('No data found')) {
-        row.parentNode.removeChild(row);
-      }
-    });
-    if (typeof XLSX === 'undefined') {
-      alert('XLSX library not loaded!');
-      return;
-    }
-    const wb = XLSX.utils.table_to_book(exportTable, { sheet: "SalesReport" });
-    XLSX.writeFile(wb, filename ? `${filename}.xlsx` : 'SalesReport.xlsx');
+  });
+  if (typeof XLSX === 'undefined') {
+    alert('XLSX library not loaded!');
+    return;
   }
+  const wb = XLSX.utils.table_to_book(exportTable, { sheet: "SalesReport" });
+  XLSX.writeFile(wb, filename ? `${filename}.xlsx` : 'SalesReport.xlsx');
+}
 
-  function exportStockMovementToExcel(tableID, filename = '') {
-    const table = document.getElementById(tableID);
-    if (!table) {
-      alert('Table not found!');
-      return;
-    }
-    const exportTable = table.cloneNode(true);
-    const rows = exportTable.querySelectorAll('tbody tr');
-    rows.forEach(row => {
-      if (row.textContent.includes('No stock movement data')) {
-        row.parentNode.removeChild(row);
-      }
-    });
-    if (typeof XLSX === 'undefined') {
-      alert('XLSX library not loaded!');
-      return;
-    }
-    const wb = XLSX.utils.table_to_book(exportTable, { sheet: "StockMovementReport" });
-    XLSX.writeFile(wb, filename ? `${filename}.xlsx` : 'StockMovementReport.xlsx');
+function exportStockMovementToExcel(tableID, filename = '') {
+  const table = document.getElementById(tableID);
+  if (!table) {
+    alert('Table not found!');
+    return;
   }
-  </script>
+  const exportTable = table.cloneNode(true);
+  const rows = exportTable.querySelectorAll('tbody tr');
+  rows.forEach(row => {
+    if (row.textContent.includes('No stock movement data')) {
+      row.parentNode.removeChild(row);
+    }
+  });
+  if (typeof XLSX === 'undefined') {
+    alert('XLSX library not loaded!');
+    return;
+  }
+  const wb = XLSX.utils.table_to_book(exportTable, { sheet: "StockMovementReport" });
+  XLSX.writeFile(wb, filename ? `${filename}.xlsx` : 'StockMovementReport.xlsx');
+}
+</script>
 
-</main>
 </body>
 </html>

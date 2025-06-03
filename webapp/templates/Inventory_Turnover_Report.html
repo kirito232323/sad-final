@@ -4,10 +4,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dashboard - Dragon Ricemill</title>
+  <title>Inventory Turnover - Dragon Ricemill</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
     html { scroll-behavior: smooth; }
     .dropdown:hover .dropdown-menu {
       opacity: 1;
@@ -16,9 +20,37 @@
     }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .filter-input {
+      @apply border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition duration-200;
+    }
+
+    .stats-card {
+      @apply bg-white rounded-xl p-6 shadow-sm border border-gray-100 transition-transform duration-200 hover:transform hover:scale-102;
+    }
+
+    .table-container {
+      @apply bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden;
+    }
+
+    .table-header {
+      @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+    }
+
+    .table-cell {
+      @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900;
+    }
+
+    .export-btn {
+      @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors duration-200;
+    }
+
+    .filter-btn {
+      @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200;
+    }
   </style>
 </head>
-<body class="bg-gray-100 text-gray-800 min-h-screen font-sans leading-relaxed overflow-x-hidden">
+<body class="bg-gray-50 text-gray-800 min-h-screen font-sans leading-relaxed overflow-x-hidden">
 
 <header class="fixed top-0 right-0 h-screen w-56 bg-white shadow-lg flex flex-col z-50 border-l border-gray-200">
   <div class="h-14 flex items-center justify-center border-b border-gray-200">
@@ -127,123 +159,172 @@
   </nav>
 </header>
 
-<!-- Push content so it’s not behind the sidebar -->
+<!-- Push content so it's not behind the sidebar -->
 <div class="mr-56 min-h-screen bg-gray-50">
-  <main class="max-w-screen-xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-    <!-- Messages -->
-    {% if messages %}
-      <div class="mb-6">
-        {% for message in messages %}
-          <div class="p-3 mb-2 rounded text-sm font-medium
-            {% if message.tags == 'success' %} bg-green-100 text-green-800
-            {% elif message.tags == 'error' %} bg-red-100 text-red-800
-            {% elif message.tags == 'warning' %} bg-yellow-100 text-yellow-800
-            {% else %} bg-gray-100 text-gray-800
-            {% endif %}">
-            {{ message }}
+  <main class="max-w-7xl mx-auto p-8">
+    <div class="mb-8">
+      <h2 class="text-3xl font-bold text-gray-900">Monthly Inventory Turnover</h2>
+      <p class="mt-1 text-sm text-gray-500">Track and analyze your monthly inventory efficiency</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
+      <form method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1" for="rice_type">Rice Type</label>
+          <div class="relative">
+            <select name="rice_type" id="rice_type" class="filter-input w-full pl-10 pr-4 py-2 appearance-none">
+              <option value="">All Types</option>
+              {% for type in rice_types %}
+                <option value="{{ type }}" {% if request.GET.rice_type == type %}selected{% endif %}>{{ type }}</option>
+              {% endfor %}
+            </select>
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i class="fas fa-box text-gray-400"></i>
+            </div>
+            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <i class="fas fa-chevron-down text-gray-400"></i>
+            </div>
           </div>
-        {% endfor %}
-      </div>
-    {% endif %}
+        </div>
 
-</nav>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1" for="start_month">Start Month</label>
+          <div class="relative">
+            <input type="month" name="start_month" id="start_month" 
+                   value="{{ request.GET.start_month|default:'' }}"
+                   class="filter-input w-full pl-10 pr-4 py-2">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i class="fas fa-calendar text-gray-400"></i>
+            </div>
+          </div>
+        </div>
 
-<main class="p-6">
-  <section class="bg-white p-6 rounded shadow mb-6">
-    <div class="flex justify-between items-center mb-4">
-      <h1 class="text-2xl font-semibold text-gray-800">Inventory Turnover Report</h1>
-      <button onclick="exportInventoryTurnoverToExcel('turnover-table')" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 text-sm">
-        Export to Excel
-      </button>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1" for="end_month">End Month</label>
+          <div class="relative">
+            <input type="month" name="end_month" id="end_month" 
+                   value="{{ request.GET.end_month|default:'' }}"
+                   class="filter-input w-full pl-10 pr-4 py-2">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i class="fas fa-calendar text-gray-400"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-end space-x-4">
+          <button type="submit" class="filter-btn flex-1">
+            <i class="fas fa-filter mr-2"></i>Apply Filters
+          </button>
+          <button type="button" onclick="setCurrentMonth()" class="export-btn">
+            <i class="fas fa-clock mr-2"></i>Current Month
+          </button>
+        </div>
+      </form>
     </div>
 
-    <!-- Filter Form -->
-    <form method="GET" class="flex flex-wrap gap-4 items-end mb-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1" for="rice_type">Rice Type</label>
-        <select name="rice_type" id="rice_type" class="border border-gray-300 rounded px-3 py-2 w-48">
-          <option value="">All</option>
-          {% for type in rice_types %}
-            <option value="{{ type }}" {% if request.GET.rice_type == type %}selected{% endif %}>{{ type }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1" for="start_date">Start Date</label>
-        <input type="date" name="start_date" id="start_date" value="{{ request.GET.start_date }}" class="border border-gray-300 rounded px-3 py-2">
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1" for="end_date">End Date</label>
-        <input type="date" name="end_date" id="end_date" value="{{ request.GET.end_date }}" class="border border-gray-300 rounded px-3 py-2">
-      </div>
-      <div>
-        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 text-sm">
-          Filter
-        </button>
-      </div>
-    </form>
-
-    <!-- Turnover Table -->
-    <div class="overflow-x-auto">
-      <table id="turnover-table" class="w-full text-sm text-left border border-gray-200 shadow rounded-lg">
-        <thead class="bg-gray-100 text-gray-700">
-          <tr>
-            <th class="px-4 py-2 border">Rice Type</th>
-            <th class="px-4 py-2 border">Beginning Stock</th>
-            <th class="px-4 py-2 border">Ending Stock</th>
-            <th class="px-4 py-2 border">Cost of Goods Sold (COGS)</th>
-            <th class="px-4 py-2 border">Inventory Turnover Ratio</th>
-            <th class="px-4 py-2 border">Date Range</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in turnover_data %}
-          <tr class="border-t">
-            <td class="px-4 py-2 border">{{ item.rice_type }}</td>
-            <td class="px-4 py-2 border">{{ item.beginning_stock }}</td>
-            <td class="px-4 py-2 border">{{ item.ending_stock }}</td>
-            <td class="px-4 py-2 border">₱{{ item.cogs|floatformat:2 }}</td>
-            <td class="px-4 py-2 border">{{ item.inventory_turnover_ratio }}</td>
-            <td class="px-4 py-2 border">
-              {% if start_date and end_date %}
-                {{ start_date }} to {{ end_date }}
+    <div class="table-container">
+      <div class="p-6 border-b border-gray-100">
+        <div class="flex justify-between items-center">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900">Monthly Turnover Summary</h3>
+            <p class="text-sm text-gray-500 mt-1">
+              {% if request.GET.start_month and request.GET.end_month %}
+                Showing data from {{ request.GET.start_month|date:"F Y" }} to {{ request.GET.end_month|date:"F Y" }}
               {% else %}
-                All Time
+                Showing all months
               {% endif %}
-            </td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="6" class="text-center py-4 text-gray-500">No data available for the selected date range.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+            </p>
+          </div>
+          <button onclick="exportInventoryTurnoverToExcel('turnover-table')" class="export-btn">
+            <i class="fas fa-download mr-2"></i>Export to Excel
+          </button>
+        </div>
+      </div>
 
-    <!-- Export Script -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script>
-      function exportInventoryTurnoverToExcel(tableID, filename = '') {
-        const table = document.getElementById(tableID);
-        if (!table) {
-          alert('Table not found!');
-          return;
-        }
-        const exportTable = table.cloneNode(true);
-        const rows = exportTable.querySelectorAll('tbody tr');
-        rows.forEach(row => {
-          if (row.textContent.includes('No data available')) {
-            row.parentNode.removeChild(row);
-          }
-        });
-        if (typeof XLSX === 'undefined') {
-          alert('XLSX library not loaded!');
-          return;
-        }
-        const wb = XLSX.utils.table_to_book(exportTable, { sheet: "InventoryTurnover" });
-        XLSX.writeFile(wb, filename ? `${filename}.xlsx` : 'InventoryTurnoverReport.xlsx');
+      <div class="overflow-x-auto">
+        <table id="turnover-table" class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="table-header">Rice Type</th>
+              <th class="table-header text-right">Beginning Stock</th>
+              <th class="table-header text-right">Ending Stock</th>
+              <th class="table-header text-right">Cost of Goods Sold</th>
+              <th class="table-header text-right">Turnover Ratio</th>
+              <th class="table-header">Month</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            {% for item in turnover_data %}
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="table-cell font-medium">{{ item.rice_type }}</td>
+              <td class="table-cell text-right">{{ item.beginning_stock }}</td>
+              <td class="table-cell text-right">{{ item.ending_stock }}</td>
+              <td class="table-cell text-right">₱{{ item.cogs|floatformat:2|intcomma }}</td>
+              <td class="table-cell text-right font-medium">{{ item.inventory_turnover_ratio }}</td>
+              <td class="table-cell">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                           {% if item.month == current_month %}
+                             bg-yellow-100 text-yellow-800
+                           {% else %}
+                             bg-blue-100 text-blue-800
+                           {% endif %}">
+                  {{ item.month|date:"F Y" }}
+                </span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                <div class="flex flex-col items-center">
+                  <i class="fas fa-chart-line text-4xl mb-2"></i>
+                  <p class="text-lg font-medium">No turnover data available</p>
+                  <p class="text-sm">Try adjusting your filters or adding more inventory data</p>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Export Script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+  function setCurrentMonth() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const currentMonth = `${year}-${month}`;
+    
+    document.getElementById('start_month').value = currentMonth;
+    document.getElementById('end_month').value = currentMonth;
+    document.querySelector('form').submit();
+  }
+
+  function exportInventoryTurnoverToExcel(tableID, filename = '') {
+    const table = document.getElementById(tableID);
+    if (!table) {
+      alert('Table not found!');
+      return;
+    }
+    const exportTable = table.cloneNode(true);
+    const rows = exportTable.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+      if (row.textContent.includes('No turnover data available')) {
+        row.parentNode.removeChild(row);
       }
-    </script>
-  </section>
-</main>
+    });
+    if (typeof XLSX === 'undefined') {
+      alert('XLSX library not loaded!');
+      return;
+    }
+    const wb = XLSX.utils.table_to_book(exportTable, { sheet: "MonthlyTurnover" });
+    XLSX.writeFile(wb, filename ? `${filename}.xlsx` : 'MonthlyTurnoverReport.xlsx');
+  }
+</script>
+
+</body>
+</html>
