@@ -20,7 +20,12 @@
 </head>
 <body class="bg-gray-100 text-gray-800 min-h-screen font-sans leading-relaxed overflow-x-hidden">
 
-<header class="fixed top-0 right-0 h-screen w-56 bg-white shadow-lg flex flex-col z-50 border-l border-gray-200">
+<!-- Toggle Sidebar Button -->
+<button id="sidebarToggle" class="fixed top-4 right-4 z-50 bg-white p-2 rounded-lg shadow-lg hover:bg-gray-100 lg:hidden">
+  <i class="fas fa-bars text-gray-600"></i>
+</button>
+
+<header id="sidebar" class="fixed top-0 right-0 h-screen w-56 bg-white shadow-lg flex flex-col z-40 border-l border-gray-200 transition-transform duration-300 ease-in-out lg:translate-x-0">
   <div class="h-14 flex items-center justify-center border-b border-gray-200">
     <a href="#" class="flex items-center space-x-2 select-none text-gray-900 font-bold text-lg tracking-wide">
       <span class="text-yellow-500 text-2xl">🌾</span>
@@ -133,7 +138,7 @@
 
 
 <!-- Main Content Wrapper -->
-<div class="mr-56 min-h-screen bg-gray-50">
+<div id="mainContent" class="lg:mr-56 min-h-screen bg-gray-50 transition-all duration-300">
   <main class="max-w-screen-xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
     <!-- Messages -->
     {% if messages %}
@@ -466,6 +471,44 @@
   </main>
 
 <script>
+  // Add this at the beginning of your script section
+  document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    let isSidebarVisible = true;
+
+    function toggleSidebar() {
+      if (isSidebarVisible) {
+        sidebar.style.transform = 'translateX(100%)';
+        mainContent.style.marginRight = '0';
+      } else {
+        sidebar.style.transform = 'translateX(0)';
+        mainContent.style.marginRight = '14rem';
+      }
+      isSidebarVisible = !isSidebarVisible;
+    }
+
+    sidebarToggle.addEventListener('click', toggleSidebar);
+
+    // Hide sidebar by default on smaller screens
+    function checkScreenSize() {
+      if (window.innerWidth < 1024) {
+        sidebar.style.transform = 'translateX(100%)';
+        mainContent.style.marginRight = '0';
+        isSidebarVisible = false;
+      } else {
+        sidebar.style.transform = 'translateX(0)';
+        mainContent.style.marginRight = '14rem';
+        isSidebarVisible = true;
+      }
+    }
+
+    // Check on load and resize
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+  });
+
   // Utility function to get CSRF token
   function getCSRFToken() {
     let csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
