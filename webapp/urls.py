@@ -53,6 +53,7 @@ urlpatterns = [
     path('add_customer/', views.add_customer, name='add_customer'),
     path('ajax/get-customer-details/', views.get_customer_details, name='get_customer_details'),
     path('invoice/', views.invoice_view, name='invoice'),
+    path('invoice/<int:order_id>/', views.invoice_view, name='invoice'),
     path('delete_customer/<int:user_id>/', views.delete_customer, name='delete_customer'),
     path('allorder-history/', views.allorder_history, name='allorder_history'),
     path('payment-confirmation/<int:order_id>/', views.payment_confirmation, name='payment_confirmation'),
@@ -64,7 +65,12 @@ urlpatterns = [
     path('edit-customer/<int:user_id>/', views.edit_customer_view, name='edit_customer'),
     path("check-username/", views.check_username, name="check_username"),
     path("check-email/", views.check_email, name="check_email"),
-
+    path('archive/', views.archive_view, name='archive'),
+    path('restore_rice/<int:rice_id>/', views.restore_rice, name='restore_rice'),
+    path('send-invoice/', views.send_invoice, name='send_invoice'), 
+    path('permanent_delete_rice/<int:rice_id>/', views.permanent_delete_rice, name='permanent_delete_rice'),
+    path('api/filtered-orders/', views.get_filtered_orders, name='filtered_orders'),
+    path('view-order/<int:order_id>/', views.view_order, name='view_order'),
 ]
 
 

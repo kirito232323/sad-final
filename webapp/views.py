@@ -3484,3 +3484,26 @@ def get_filtered_orders(request):
             'status': 'error',
             'message': str(e)
         }, status=500)
+
+def view_order(request, order_id):
+    """
+    View details of a specific order.
+    """
+    try:
+        order = CustomerOrder.objects.select_related(
+            'customer__name',
+            'rice_type',
+            'employee'
+        ).get(order_id=order_id)
+
+        context = {
+            'order': order,
+            'title': f'Order #{order.order_id}',
+        }
+        return render(request, 'view_order.html', context)
+    except CustomerOrder.DoesNotExist:
+        messages.error(request, f'Order #{order_id} not found.')
+        return redirect('dashboard')
+    except Exception as e:
+        messages.error(request, f'Error viewing order: {str(e)}')
+        return redirect('dashboard')

@@ -1,0 +1,168 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - Dragon Ricemill</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="max-w-4xl mx-auto py-8 px-4">
+        <!-- Back Button -->
+        <a href="javascript:history.back()" class="inline-flex items-center text-gray-600 hover:text-gray-800 mb-6">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Back
+        </a>
+
+        <!-- Order Details Card -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold text-gray-900">Order #{{ order.order_id }}</h1>
+                <span class="px-3 py-1 rounded-full text-sm font-medium
+                    {% if order.approval_status == 'confirmed' %}bg-green-100 text-green-800
+                    {% elif order.approval_status == 'pending' %}bg-yellow-100 text-yellow-800
+                    {% else %}bg-red-100 text-red-800{% endif %}">
+                    {{ order.approval_status|title }}
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Customer Information -->
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Customer Information</h2>
+                    <div class="space-y-3">
+                        <div>
+                            <p class="text-sm text-gray-600">Name</p>
+                            <p class="font-medium">{{ order.customer.name.first_name }} {{ order.customer.name.last_name }}</p>
+                        </div>
+                        {% if order.customer.Customer_Mobile_Number %}
+                        <div>
+                            <p class="text-sm text-gray-600">Contact Number</p>
+                            <p class="font-medium">{{ order.customer.Customer_Mobile_Number }}</p>
+                        </div>
+                        {% endif %}
+                        {% if order.customer.address %}
+                        <div>
+                            <p class="text-sm text-gray-600">Address</p>
+                            <p class="font-medium">
+                                {{ order.customer.address.house_unit_number }}
+                                {{ order.customer.address.street_name }},
+                                {{ order.customer.address.barangay }},
+                                {{ order.customer.address.city_municipality }}
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Order Information -->
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Order Information</h2>
+                    <div class="space-y-3">
+                        <div>
+                            <p class="text-sm text-gray-600">Rice Type</p>
+                            <p class="font-medium">{{ order.rice_type.rice_type }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Quantity</p>
+                            <p class="font-medium">{{ order.quantity }} sacks</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Cost per Sack</p>
+                            <p class="font-medium">₱{{ order.cost_per_sack|floatformat:2|intcomma }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Total Cost</p>
+                            <p class="font-medium text-lg text-yellow-600">₱{{ order.total_cost|floatformat:2|intcomma }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Information -->
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Payment Information</h2>
+                    <div class="space-y-3">
+                        <div>
+                            <p class="text-sm text-gray-600">Payment Method</p>
+                            <p class="font-medium">{{ order.payment_method|title }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Amount Paid</p>
+                            <p class="font-medium">₱{{ order.amount_paid|floatformat:2|intcomma }}</p>
+                        </div>
+                        {% if order.amount_change %}
+                        <div>
+                            <p class="text-sm text-gray-600">Change</p>
+                            <p class="font-medium">₱{{ order.amount_change|floatformat:2|intcomma }}</p>
+                        </div>
+                        {% endif %}
+                        <div>
+                            <p class="text-sm text-gray-600">Payment Status</p>
+                            <span class="inline-flex px-2 py-1 text-sm font-medium rounded-full
+                                {% if order.amount_paid >= order.total_cost %}bg-green-100 text-green-800
+                                {% elif order.amount_paid > 0 %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-red-100 text-red-800{% endif %}">
+                                {% if order.amount_paid >= order.total_cost %}Paid
+                                {% elif order.amount_paid > 0 %}Partial
+                                {% else %}Unpaid{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Delivery Information -->
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Delivery Information</h2>
+                    <div class="space-y-3">
+                        <div>
+                            <p class="text-sm text-gray-600">Delivery Type</p>
+                            <p class="font-medium">{{ order.delivery_type|title }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Delivery Status</p>
+                            <span class="inline-flex px-2 py-1 text-sm font-medium rounded-full
+                                {% if order.delivery_status == 'delivered' %}bg-green-100 text-green-800
+                                {% elif order.delivery_status == 'pending' %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ order.delivery_status|title }}
+                            </span>
+                        </div>
+                        {% if order.receiver_name %}
+                        <div>
+                            <p class="text-sm text-gray-600">Receiver Name</p>
+                            <p class="font-medium">{{ order.receiver_name }}</p>
+                        </div>
+                        {% endif %}
+                        {% if order.receiver_mobile_number %}
+                        <div>
+                            <p class="text-sm text-gray-600">Receiver Contact</p>
+                            <p class="font-medium">{{ order.receiver_mobile_number }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-8 flex justify-end space-x-4">
+                {% if order.approval_status != 'cancelled' %}
+                <a href="{% url 'invoice' order.order_id %}" 
+                   class="inline-flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                    <i class="fas fa-file-invoice mr-2"></i>
+                    Generate Invoice
+                </a>
+                {% endif %}
+                {% if order.approval_status == 'pending' %}
+                <a href="{% url 'payment_confirmation' order.order_id %}" 
+                   class="inline-flex items-center px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors">
+                    <i class="fas fa-money-check mr-2"></i>
+                    Process Payment
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</body>
+</html> 
