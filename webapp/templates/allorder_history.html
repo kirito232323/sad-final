@@ -5,10 +5,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Order History - Dragon Ricemill</title>
+  <title>All Orders History - Dragon Ricemill</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
     html { scroll-behavior: smooth; }
     .dropdown:hover .dropdown-menu {
       opacity: 1;
@@ -92,9 +96,14 @@
     }
   </style>
 </head>
-<body class="bg-gray-50 text-gray-800 min-h-screen font-sans leading-relaxed antialiased">
+<body class="bg-gray-50 text-gray-800 min-h-screen font-sans leading-relaxed overflow-x-hidden">
 
-<header class="fixed top-0 right-0 h-screen w-56 bg-white shadow-lg flex flex-col z-50 border-l border-gray-200">
+<!-- Toggle Sidebar Button -->
+<button id="sidebarToggle" class="fixed top-4 right-4 z-50 bg-white p-2 rounded-lg shadow-lg hover:bg-gray-100 lg:hidden">
+  <i class="fas fa-bars text-gray-600"></i>
+</button>
+
+<header id="sidebar" class="fixed top-0 right-0 h-screen w-56 bg-white shadow-lg flex flex-col z-40 border-l border-gray-200 transition-transform duration-300 ease-in-out lg:translate-x-0">
   <div class="h-14 flex items-center justify-center border-b border-gray-200">
     <a href="#" class="flex items-center space-x-2 select-none text-gray-900 font-bold text-lg tracking-wide">
       <span class="text-yellow-500 text-2xl">🌾</span>
@@ -103,6 +112,7 @@
   </div>
 
   <nav class="flex-1 flex flex-col py-1 pr-1 overflow-y-auto scrollbar-hide">
+    <!-- Main Navigation -->
     <div class="px-2 py-1">
       <span class="block text-1 text-gray-500 font-semibold mb-3">Welcome, {{ request.session.user_name }}!</span>
       <a href="{% url 'dashboard' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 font-semibold hover:text-yellow-600 transition">
@@ -112,95 +122,95 @@
         <i class="fas fa-user-circle w-4 text-yellow-500"></i><span>Profile</span>
       </a>
     </div>
-    
 
     {% if request.session.user_role == 'admin' %}
+    <!-- User Management Section -->
     <div class="mb-2 px-2">
-      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Users</p>
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">User Management</p>
+      <!-- Employee Management -->
       <a href="{% url 'add_user' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
         <i class="fas fa-user-plus w-4 text-yellow-500"></i><span>Add User</span>
       </a>
       <a href="{% url 'edituser' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
         <i class="fas fa-user-edit w-4 text-yellow-500"></i><span>Edit User</span>
       </a>
-      <a href="{% url 'user_account' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-user-circle w-4 text-yellow-500"></i><span>Customer</span>
-      </a>
-
-      
-
-      
-  <!-- New Create Customer Ledger Link -->
-  <a href="{% url 'customer_ledger_create' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-    <i class="fas fa-book w-4 text-yellow-500"></i><span>Create Customer Ledger</span>
-  </a>
-
       <a href="{% url 'logs' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
         <i class="fas fa-file-alt w-4 text-yellow-500"></i><span>User Logs</span>
       </a>
-      <!-- Delete Customer link (no user_id, so go to selection page) -->
-      
-    </div>
-{% endif %}
-    
 
+      <!-- Customer Management -->
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1 mt-4">Customer Management</p>
+      <a href="{% url 'user_account' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+        <i class="fas fa-users w-4 text-yellow-500"></i><span>Customers</span>
+      </a>
+      <a href="{% url 'add_customer' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-user-plus w-4 text-yellow-500"></i><span>Add Customer</span>
+      </a>
+      <a href="{% url 'customer_ledger_create' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-book w-4 text-yellow-500"></i><span>Create Customer Ledger</span>
+      </a>
+    </div>
+    {% endif %}
+
+    <!-- Orders & Transactions -->
     <div class="mb-2 px-2">
-      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Transaction</p>
-      <a href="{% url 'allorder_history' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-truck-moving w-4 text-yellow-500"></i><span>All Orders History</span>
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Orders & Transactions</p>
+      {% if request.session.user_role == 'admin' or request.session.user_role == 'cashier' %}
+      <a href="{% url 'new_sale' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+        <i class="fas fa-cart-plus w-4 text-yellow-500"></i><span>New Order</span>
+      </a>
+      {% endif %}
+      <a href="{% url 'allorder_history' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm bg-yellow-50 text-yellow-600 transition {% if request.session.user_role == 'admin' or request.session.user_role == 'cashier' %}mt-1{% endif %}">
+        <i class="fas fa-history w-4 text-yellow-500"></i><span>All Orders History</span>
       </a>
       <a href="{% url 'payment_confirmation' 0 %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-truck-moving w-4 text-yellow-500"></i><span>Payment Confirmation</span>
+        <i class="fas fa-money-check w-4 text-yellow-500"></i><span>Payment Confirmation</span>
       </a>
       <a href="{% url 'delivery_confirmation' 0 %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-truck-moving w-4 text-yellow-500"></i><span>Delivery Confirmation</span>
+        <i class="fas fa-truck w-4 text-yellow-500"></i><span>Delivery Confirmation</span>
       </a>
     </div>
 
-    
     {% if request.session.user_role == 'admin' or request.session.user_role == 'employee' %}
+    <!-- Inventory Management -->
     <div class="mb-2 px-2">
       <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Inventory</p>
       <a href="{% url 'addstock' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
-        <i class="fas fa-boxes w-4 text-yellow-500"></i><span>Inventory</span>
+        <i class="fas fa-boxes w-4 text-yellow-500"></i><span>Manage Inventory</span>
       </a>
       <a href="{% url 'viewstocklevel' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-layer-group w-4 text-yellow-500"></i><span>View Levels</span>
+        <i class="fas fa-layer-group w-4 text-yellow-500"></i><span>View Stock Levels</span>
       </a>
     </div>
     {% endif %}
 
     {% if request.session.user_role == 'admin' or request.session.user_role == 'cashier' %}
+    <!-- Sales Management -->
+    <div class="mb-2 px-2">
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Sales</p>
+      <a href="{% url 'invoice' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+        <i class="fas fa-file-invoice w-4 text-yellow-500"></i><span>Create Invoice</span>
+      </a>
+      <a href="{% url 'view_sales_report' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-chart-line w-4 text-yellow-500"></i><span>Sales Report</span>
+      </a>
+      <a href="{% url 'inventory_turnover' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-sync-alt w-4 text-yellow-500"></i><span>Inventory Turnover</span>
+      </a>
+    </div>
+    {% endif %}
 
-<div class="mb-2 px-2">
-  <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Sales</p>
-  <a href="{% url 'new_sale' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
-    <i class="fas fa-cart-plus w-4 text-yellow-500"></i><span>New Sale</span>
-  </a>
-  <a href="{% url 'invoice' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-    <i class="fas fa-file-invoice w-4 text-yellow-500"></i><span>Create Invoice</span>
-  </a>
-  
-  <a href="{% url 'view_sales_report' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-    <i class="fas fa-chart-line w-4 text-yellow-500"></i><span>Report</span>
-  </a>
-  <a href="{% url 'inventory_turnover' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-    <i class="fas fa-sync-alt w-4 text-yellow-500"></i><span>Inventory Turnover</span>
-  </a>
-</div>
-  {% endif %}
-
-
-
+    <!-- Logout -->
     <div class="border-t border-gray-200 mt-auto px-2 py-4">
       <a href="{% url 'logout' %}" onclick="return confirm('Logout?');" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-red-100 hover:text-red-600 transition font-semibold text-red-500 mt-2">
         <i class="fas fa-sign-out-alt w-4"></i><span>Logout</span>
       </a>
-</div>
-</nav>
+    </div>
+  </nav>
 </header>
 
-<main class="mr-64 p-8">
+<!-- Push content so it's not behind the sidebar -->
+<div id="mainContent" class="lg:mr-56 min-h-screen bg-gray-50 transition-all duration-300">
   <div class="max-w-5xl mx-auto">
     <!-- Page Header -->
     <div class="mb-8">
@@ -211,133 +221,168 @@
       </h1>
     </div>
 
+    <!-- Session Messages -->
+    {% if request.session.order_message %}
+    <div class="mb-6">
+      <div class="p-4 rounded-lg {% if request.session.order_message.type == 'success' %}bg-green-100 text-green-800 border border-green-200{% else %}bg-red-100 text-red-800 border border-red-200{% endif %}">
+        <div class="flex items-center">
+          <i class="fas {% if request.session.order_message.type == 'success' %}fa-check-circle text-green-500{% else %}fa-exclamation-circle text-red-500{% endif %} mr-2"></i>
+          {{ request.session.order_message.text }}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
     <!-- Stats Overview -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div class="bg-white rounded-xl p-6 card-shadow hover-scale">
+      <!-- Total Orders -->
+      <div class="bg-white rounded-lg p-4 card-shadow hover-scale">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600">Total Orders</p>
-            <h3 class="text-2xl font-bold text-yellow-600 mt-1">{{ total_orders|default:0 }}</h3>
+            <p class="text-xs font-medium text-gray-600">Active Orders</p>
+            <h3 class="text-xl font-bold text-yellow-600 mt-0.5">{{ total_orders|default:0 }}</h3>
           </div>
-          <div class="bg-yellow-100 p-3 rounded-lg">
-            <i class="fas fa-shopping-cart text-yellow-600"></i>
+          <div class="bg-yellow-100 p-2 rounded-lg">
+            <i class="fas fa-shopping-cart text-yellow-600 text-sm"></i>
           </div>
         </div>
       </div>
 
-      <div class="bg-white rounded-xl p-6 card-shadow hover-scale">
+      <!-- Total Revenue -->
+      <div class="bg-white rounded-lg p-4 card-shadow hover-scale">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600">Cancelled Orders</p>
-            <h3 class="text-2xl font-bold text-red-600 mt-1">{{ cancelled_count|default:0 }}</h3>
+            <p class="text-xs font-medium text-gray-600">Revenue</p>
+            <h3 class="text-xl font-bold text-green-600 mt-0.5">₱{{ total_revenue|default:0|floatformat:2|intcomma }}</h3>
           </div>
-          <div class="bg-red-100 p-3 rounded-lg">
-            <i class="fas fa-times-circle text-red-600"></i>
+          <div class="bg-green-100 p-2 rounded-lg">
+            <i class="fas fa-money-bill-wave text-green-600 text-sm"></i>
           </div>
         </div>
       </div>
 
-      <div class="bg-white rounded-xl p-6 card-shadow hover-scale">
+      <!-- Total Quantity -->
+      <div class="bg-white rounded-lg p-4 card-shadow hover-scale">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600">Total Revenue</p>
-            <h3 class="text-2xl font-bold text-green-600 mt-1">₱{{ total_revenue|default:0|floatformat:2|intcomma }}</h3>
+            <p class="text-xs font-medium text-gray-600">Quantity</p>
+            <h3 class="text-xl font-bold text-purple-600 mt-0.5">{{ total_quantity|default:0|intcomma }}</h3>
           </div>
-          <div class="bg-green-100 p-3 rounded-lg">
-            <i class="fas fa-money-bill-wave text-green-600"></i>
+          <div class="bg-purple-100 p-2 rounded-lg">
+            <i class="fas fa-box text-purple-600 text-sm"></i>
           </div>
         </div>
       </div>
 
-      <div class="bg-white rounded-xl p-6 card-shadow hover-scale">
+      <!-- Cancelled Orders -->
+      <div class="bg-white rounded-lg p-4 card-shadow hover-scale">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600">Total Quantity</p>
-            <h3 class="text-2xl font-bold text-purple-600 mt-1">{{ total_quantity|default:0|intcomma }}</h3>
+            <p class="text-xs font-medium text-gray-600">Cancelled Orders</p>
+            <h3 class="text-xl font-bold text-red-600 mt-0.5">{{ cancelled_count|default:0 }}</h3>
           </div>
-          <div class="bg-purple-100 p-3 rounded-lg">
-            <i class="fas fa-box text-purple-600"></i>
+          <div class="bg-red-100 p-2 rounded-lg">
+            <i class="fas fa-times-circle text-red-600 text-sm"></i>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Filters -->
-    <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-      <form id="order-filters" method="get" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div>
-          <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
-          <div class="relative rounded-md shadow-sm">
-            <input type="text" 
-                   name="search" 
-                   id="search" 
-                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-colors" 
-                   placeholder="Order ID, Customer or Rice Type"
-                   value="{{ request.GET.search }}">
-            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+    <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+      <form id="order-filters" method="get" class="space-y-4">
+        {% csrf_token %}
+        <!-- Preserve pagination when filtering -->
+        <input type="hidden" name="active_page" value="{{ active_page_obj.number }}">
+        <input type="hidden" name="cancelled_page" value="{{ cancelled_page_obj.number }}">
+        
+        <!-- Search and Payment Method - First Row -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div>
+            <label for="search" class="block text-xs font-medium text-gray-700 mb-1">Search</label>
+            <div class="relative rounded-md shadow-sm">
+              <input type="text" 
+                     name="search" 
+                     id="search" 
+                     class="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-yellow-500 focus:border-yellow-500 transition-colors" 
+                     placeholder="Order ID, Customer or Rice Type"
+                     value="{{ request.GET.search|default:'' }}"
+                     autocomplete="off">
+              <i class="fas fa-search absolute left-2.5 top-2.5 text-gray-400 text-sm"></i>
+              <div id="searchSpinner" class="hidden absolute right-2.5 top-2.5">
+                <div class="loading-spinner w-4 h-4 border-2"></div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label for="payment_method" class="block text-xs font-medium text-gray-700 mb-1">Payment Method</label>
+            <select name="payment_method" 
+                    id="payment_method" 
+                    class="w-full py-2 pl-3 pr-8 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-yellow-500 focus:border-yellow-500 transition-colors">
+              <option value="">All Methods</option>
+              <option value="cash" {% if request.GET.payment_method == 'cash' %}selected{% endif %}>Cash</option>
+              <option value="gcash" {% if request.GET.payment_method == 'gcash' %}selected{% endif %}>GCash</option>
+              <option value="bank" {% if request.GET.payment_method == 'bank' %}selected{% endif %}>Bank Transfer</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="delivery_type" class="block text-xs font-medium text-gray-700 mb-1">Delivery Type</label>
+            <select name="delivery_type" 
+                    id="delivery_type" 
+                    class="w-full py-2 pl-3 pr-8 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-yellow-500 focus:border-yellow-500 transition-colors">
+              <option value="">All Types</option>
+              <option value="pickup" {% if request.GET.delivery_type == 'pickup' %}selected{% endif %}>Pickup</option>
+              <option value="delivery" {% if request.GET.delivery_type == 'delivery' %}selected{% endif %}>Delivery</option>
+            </select>
           </div>
         </div>
 
-        <div>
-          <label for="payment_method" class="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
-          <select name="payment_method" 
-                  id="payment_method" 
-                  class="w-full py-2 pl-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-colors">
-            <option value="">All Methods</option>
-            <option value="cash" {% if request.GET.payment_method == 'cash' %}selected{% endif %}>Cash</option>
-            <option value="gcash" {% if request.GET.payment_method == 'gcash' %}selected{% endif %}>GCash</option>
-            <option value="credit" {% if request.GET.payment_method == 'credit' %}selected{% endif %}>Credit Card</option>
-          </select>
+        <!-- Rice Type and Date Range - Second Row -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div>
+            <label for="rice_type" class="block text-xs font-medium text-gray-700 mb-1">Rice Type</label>
+            <select name="rice_type" 
+                    id="rice_type" 
+                    class="w-full py-2 pl-3 pr-8 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-yellow-500 focus:border-yellow-500 transition-colors">
+              <option value="">All Rice Types</option>
+              {% for rice in rice_types %}
+                <option value="{{ rice.rice_type|lower }}" {% if request.GET.rice_type == rice.rice_type|lower %}selected{% endif %}>
+                  {{ rice.rice_type }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-medium text-gray-700 mb-1">Date Range</label>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <input type="date" 
+                       name="start_date" 
+                       id="start_date" 
+                       class="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-yellow-500 focus:border-yellow-500 transition-colors"
+                       value="{{ request.GET.start_date|default:'' }}">
+              </div>
+              <div>
+                <input type="date" 
+                       name="end_date" 
+                       id="end_date" 
+                       class="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-yellow-500 focus:border-yellow-500 transition-colors"
+                       value="{{ request.GET.end_date|default:'' }}">
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div>
-          <label for="delivery_type" class="block text-sm font-medium text-gray-700 mb-1">Delivery Type</label>
-          <select name="delivery_type" 
-                  id="delivery_type" 
-                  class="w-full py-2 pl-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-colors">
-            <option value="">All Types</option>
-            <option value="pickup" {% if request.GET.delivery_type == 'pickup' %}selected{% endif %}>Pickup</option>
-            <option value="delivery" {% if request.GET.delivery_type == 'delivery' %}selected{% endif %}>Delivery</option>
-          </select>
-        </div>
-
-        <div>
-          <label for="rice_type" class="block text-sm font-medium text-gray-700 mb-1">Rice Type</label>
-          <select name="rice_type" 
-                  id="rice_type" 
-                  class="w-full py-2 pl-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-colors">
-            <option value="">All Rice Types</option>
-            {% for rice in rice_types %}
-              <option value="{{ rice.rice_type|lower }}" {% if request.GET.rice_type == rice.rice_type|lower %}selected{% endif %}>
-                {{ rice.rice_type }}
-              </option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div>
-          <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-          <input type="date" 
-                 name="start_date" 
-                 id="start_date" 
-                 class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-colors"
-                 value="{{ request.GET.start_date }}">
-        </div>
-
-        <div>
-          <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-          <input type="date" 
-                 name="end_date" 
-                 id="end_date" 
-                 class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-colors"
-                 value="{{ request.GET.end_date }}">
-        </div>
-
-        <div class="lg:col-span-3 flex justify-end">
-          <button type="submit" 
-                  class="bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-all duration-200 flex items-center gap-2">
-            <i class="fas fa-filter"></i>
-            <span>Apply Filters</span>
+        <!-- Clear Filters Button -->
+        <div class="flex justify-end pt-2">
+          <button type="button" 
+                  id="clearFilters"
+                  class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-all duration-200">
+            <i class="fas fa-times mr-2 text-gray-400"></i>
+            Clear Filters
           </button>
         </div>
       </form>
@@ -368,57 +413,90 @@
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              {% for order in page_obj %}
-                {% if order.approval_status != 'cancelled' %}
-                <tr class="hover:bg-gray-50 transition-colors">
-                  <td class="px-3 py-4 text-sm text-gray-900">#{{ order.order_id }}</td>
-                  <td class="px-3 py-4 text-sm text-gray-500">{{ order.created_at|date:"M d, Y" }}</td>
-                  <td class="px-3 py-4 text-sm text-gray-900">
-                    {% if order.customer %}
-                      {{ order.customer.name.first_name }} {{ order.customer.name.last_name }}
-                    {% else %}
-                      N/A
-                    {% endif %}
-                  </td>
-                  <td class="px-3 py-4 text-sm text-gray-500">
-                    {{ order.customer.Customer_Mobile_Number|default:"N/A" }}
-                  </td>
-                  <td class="px-3 py-4 text-sm text-gray-900">
-                    {{ order.rice_type.rice_type|default:"N/A" }}
-                  </td>
-                  <td class="px-3 py-4 text-sm text-center text-gray-900">
-                    {{ order.quantity }}
-                  </td>
-                  <td class="px-3 py-4 text-sm text-right text-gray-900">
-                    ₱{{ order.cost_per_sack|floatformat:2|intcomma }}
-                  </td>
-                  <td class="px-3 py-4 text-sm text-right font-medium text-gray-900">
-                    ₱{{ order.total_cost|floatformat:2|intcomma }}
-                  </td>
-                  <td class="px-3 py-4 text-center">
-                    <span class="payment-badge {% if order.payment_method == 'cash' %}payment-cash{% elif order.payment_method == 'gcash' %}payment-gcash{% else %}payment-credit{% endif %}">
-                      {{ order.payment_method|upper }}
-                    </span>
-                  </td>
-                  <td class="px-3 py-4 text-center">
-                    <span class="delivery-badge {% if order.delivery_type == 'pickup' %}delivery-pickup{% else %}delivery-delivery{% endif %}">
-                      {{ order.delivery_type|upper }}
-                    </span>
-                  </td>
-                  <td class="px-3 py-4 text-sm text-gray-500">
-                    {% if order.employee %}
-                      {{ order.employee.FirstName }} {{ order.employee.LastName }}
-                    {% else %}
-                      N/A
-                    {% endif %}
-                  </td>
-                </tr>
-                {% endif %}
+              {% for order in active_page_obj %}
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-3 py-4 text-sm text-gray-900">#{{ order.order_id }}</td>
+                <td class="px-3 py-4 text-sm text-gray-500">{{ order.created_at|date:"M d, Y" }}</td>
+                <td class="px-3 py-4 text-sm text-gray-900">
+                  {% if order.customer %}
+                    {{ order.customer.name.first_name }} {{ order.customer.name.last_name }}
+                  {% else %}
+                    N/A
+                  {% endif %}
+                </td>
+                <td class="px-3 py-4 text-sm text-gray-500">
+                  {{ order.customer.Customer_Mobile_Number|default:"N/A" }}
+                </td>
+                <td class="px-3 py-4 text-sm text-gray-900">
+                  {{ order.rice_type.rice_type|default:"N/A" }}
+                </td>
+                <td class="px-3 py-4 text-sm text-center text-gray-900">
+                  {{ order.quantity }}
+                </td>
+                <td class="px-3 py-4 text-sm text-right text-gray-900">
+                  ₱{{ order.cost_per_sack|floatformat:2|intcomma }}
+                </td>
+                <td class="px-3 py-4 text-sm text-right font-medium text-gray-900">
+                  ₱{{ order.total_cost|floatformat:2|intcomma }}
+                </td>
+                <td class="px-3 py-4 text-center">
+                  <span class="payment-badge {% if order.payment_method == 'cash' %}payment-cash{% elif order.payment_method == 'gcash' %}payment-gcash{% else %}payment-credit{% endif %}">
+                    {{ order.payment_method|upper }}
+                  </span>
+                </td>
+                <td class="px-3 py-4 text-center">
+                  <span class="delivery-badge {% if order.delivery_type == 'pickup' %}delivery-pickup{% else %}delivery-delivery{% endif %}">
+                    {{ order.delivery_type|upper }}
+                  </span>
+                </td>
+                <td class="px-3 py-4 text-sm text-gray-500">
+                  {% if order.employee %}
+                    {{ order.employee.FirstName }} {{ order.employee.LastName }}
+                  {% else %}
+                    N/A
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="11" class="px-6 py-10 text-center">
+                  <div class="flex flex-col items-center">
+                    <i class="fas fa-inbox text-4xl text-gray-400 mb-3"></i>
+                    <p class="text-lg font-medium text-gray-900">No active orders to display</p>
+                    <p class="text-sm text-gray-500">Active orders will appear here once they are confirmed</p>
+                  </div>
+                </td>
+              </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
       </div>
+
+      <!-- Active Orders Pagination -->
+      {% if active_page_obj.paginator.num_pages > 1 %}
+      <div class="mt-6 flex justify-center items-center space-x-4">
+        {% if active_page_obj.has_previous %}
+          <a href="?active_page={{ active_page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.payment_method %}&payment_method={{ request.GET.payment_method }}{% endif %}{% if request.GET.delivery_type %}&delivery_type={{ request.GET.delivery_type }}{% endif %}" 
+             class="flex items-center px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            <i class="fas fa-chevron-left mr-2"></i>
+            Previous
+          </a>
+        {% endif %}
+
+        <span class="text-sm text-gray-700">
+          Page {{ active_page_obj.number }} of {{ active_page_obj.paginator.num_pages }}
+        </span>
+
+        {% if active_page_obj.has_next %}
+          <a href="?active_page={{ active_page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.payment_method %}&payment_method={{ request.GET.payment_method }}{% endif %}{% if request.GET.delivery_type %}&delivery_type={{ request.GET.delivery_type }}{% endif %}" 
+             class="flex items-center px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            Next
+            <i class="fas fa-chevron-right ml-2"></i>
+          </a>
+        {% endif %}
+      </div>
+      {% endif %}
     </div>
 
     <!-- Cancelled Orders Table -->
@@ -426,7 +504,6 @@
       <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
         <i class="fas fa-times-circle text-red-500"></i>
         Cancelled Orders
-        <span class="text-sm font-normal text-gray-500 ml-2">({{ cancelled_count }} orders)</span>
       </h2>
       <div class="bg-white rounded-xl shadow-md">
         <div class="w-full">
@@ -443,72 +520,75 @@
                 <th class="w-1/12 px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
                 <th class="w-1/12 px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">Payment</th>
                 <th class="w-1/12 px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">Delivery</th>
-                <th class="w-1/12 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cancelled By</th>
-                <th class="w-1/12 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cancel Date</th>
+                <th class="w-1/12 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cashier</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              {% for order in page_obj %}
-                {% if order.approval_status == 'cancelled' %}
-                <tr class="hover:bg-gray-50 transition-colors bg-red-50">
-                  <td class="px-3 py-4 text-sm text-gray-900">#{{ order.order_id }}</td>
-                  <td class="px-3 py-4 text-sm text-gray-500">{{ order.created_at|date:"M d, Y" }}</td>
-                  <td class="px-3 py-4 text-sm text-gray-900">
-                    {% if order.customer %}
-                      {{ order.customer.name.first_name }} {{ order.customer.name.last_name }}
-                    {% else %}
-                      N/A
-                    {% endif %}
-                  </td>
-                  <td class="px-3 py-4 text-sm text-gray-500">
-                    {{ order.customer.Customer_Mobile_Number|default:"N/A" }}
-                  </td>
-                  <td class="px-3 py-4 text-sm text-gray-900">
-                    {{ order.rice_type.rice_type|default:"N/A" }}
-                  </td>
-                  <td class="px-3 py-4 text-sm text-center text-gray-900">
-                    {{ order.quantity }}
-                  </td>
-                  <td class="px-3 py-4 text-sm text-right text-gray-900">
-                    ₱{{ order.cost_per_sack|floatformat:2|intcomma }}
-                  </td>
-                  <td class="px-3 py-4 text-sm text-right font-medium text-gray-900">
-                    ₱{{ order.total_cost|floatformat:2|intcomma }}
-                  </td>
-                  <td class="px-3 py-4 text-center">
-                    <span class="payment-badge {% if order.payment_method == 'cash' %}payment-cash{% elif order.payment_method == 'gcash' %}payment-gcash{% else %}payment-credit{% endif %}">
-                      {{ order.payment_method|upper }}
-                    </span>
-                  </td>
-                  <td class="px-3 py-4 text-center">
-                    <span class="delivery-badge {% if order.delivery_type == 'pickup' %}delivery-pickup{% else %}delivery-delivery{% endif %}">
-                      {{ order.delivery_type|upper }}
-                    </span>
-                  </td>
-                  <td class="px-3 py-4 text-sm text-gray-500">
-                    {% if order.employee %}
-                      {{ order.employee.FirstName }} {{ order.employee.LastName }}
-                    {% else %}
-                      N/A
-                    {% endif %}
-                  </td>
-                  <td class="px-3 py-4 text-sm text-gray-500">
-                    {{ order.updated_at|date:"M d, Y H:i" }}
-                  </td>
-                </tr>
-                {% endif %}
+              {% for order in cancelled_page_obj %}
+              <tr class="hover:bg-gray-50 transition-colors bg-red-50">
+                <td class="px-3 py-4 text-sm text-gray-900">#{{ order.order_id }}</td>
+                <td class="px-3 py-4 text-sm text-gray-500">{{ order.created_at|date:"M d, Y" }}</td>
+                <td class="px-3 py-4 text-sm text-gray-900">
+                  {% if order.customer %}
+                    {{ order.customer.name.first_name }} {{ order.customer.name.last_name }}
+                  {% else %}
+                    N/A
+                  {% endif %}
+                </td>
+                <td class="px-3 py-4 text-sm text-gray-500">
+                  {{ order.customer.Customer_Mobile_Number|default:"N/A" }}
+                </td>
+                <td class="px-3 py-4 text-sm text-gray-900">
+                  {{ order.rice_type.rice_type|default:"N/A" }}
+                </td>
+                <td class="px-3 py-4 text-sm text-center text-gray-900">
+                  {{ order.quantity }}
+                </td>
+                <td class="px-3 py-4 text-sm text-right text-gray-900">
+                  ₱{{ order.cost_per_sack|floatformat:2|intcomma }}
+                </td>
+                <td class="px-3 py-4 text-sm text-right font-medium text-gray-900">
+                  ₱{{ order.total_cost|floatformat:2|intcomma }}
+                </td>
+                <td class="px-3 py-4 text-center">
+                  <span class="payment-badge {% if order.payment_method == 'cash' %}payment-cash{% elif order.payment_method == 'gcash' %}payment-gcash{% else %}payment-credit{% endif %}">
+                    {{ order.payment_method|upper }}
+                  </span>
+                </td>
+                <td class="px-3 py-4 text-center">
+                  <span class="delivery-badge {% if order.delivery_type == 'pickup' %}delivery-pickup{% else %}delivery-delivery{% endif %}">
+                    {{ order.delivery_type|upper }}
+                  </span>
+                </td>
+                <td class="px-3 py-4 text-sm text-gray-500">
+                  {% if order.employee %}
+                    {{ order.employee.FirstName }} {{ order.employee.LastName }}
+                  {% else %}
+                    N/A
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="11" class="px-6 py-10 text-center">
+                  <div class="flex flex-col items-center">
+                    <i class="fas fa-inbox text-4xl text-gray-400 mb-3"></i>
+                    <p class="text-lg font-medium text-gray-900">No cancelled orders</p>
+                    <p class="text-sm text-gray-500">Cancelled orders will appear here</p>
+                  </div>
+                </td>
+              </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
       </div>
-    </div>
 
-    <!-- Pagination -->
-    {% if page_obj.paginator.num_pages > 1 %}
+      <!-- Cancelled Orders Pagination -->
+      {% if cancelled_page_obj.paginator.num_pages > 1 %}
       <div class="mt-6 flex justify-center items-center space-x-4">
-        {% if page_obj.has_previous %}
-          <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.payment_method %}&payment_method={{ request.GET.payment_method }}{% endif %}{% if request.GET.delivery_type %}&delivery_type={{ request.GET.delivery_type }}{% endif %}" 
+        {% if cancelled_page_obj.has_previous %}
+          <a href="?cancelled_page={{ cancelled_page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.payment_method %}&payment_method={{ request.GET.payment_method }}{% endif %}{% if request.GET.delivery_type %}&delivery_type={{ request.GET.delivery_type }}{% endif %}" 
              class="flex items-center px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
             <i class="fas fa-chevron-left mr-2"></i>
             Previous
@@ -516,22 +596,60 @@
         {% endif %}
 
         <span class="text-sm text-gray-700">
-          Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+          Page {{ cancelled_page_obj.number }} of {{ cancelled_page_obj.paginator.num_pages }}
         </span>
 
-        {% if page_obj.has_next %}
-          <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.payment_method %}&payment_method={{ request.GET.payment_method }}{% endif %}{% if request.GET.delivery_type %}&delivery_type={{ request.GET.delivery_type }}{% endif %}" 
+        {% if cancelled_page_obj.has_next %}
+          <a href="?cancelled_page={{ cancelled_page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.payment_method %}&payment_method={{ request.GET.payment_method }}{% endif %}{% if request.GET.delivery_type %}&delivery_type={{ request.GET.delivery_type }}{% endif %}" 
              class="flex items-center px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
             Next
             <i class="fas fa-chevron-right ml-2"></i>
           </a>
         {% endif %}
       </div>
-    {% endif %}
+      {% endif %}
+    </div>
   </div>
-</main>
+</div>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+  const sidebar = document.getElementById('sidebar');
+  const mainContent = document.getElementById('mainContent');
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  let isSidebarVisible = true;
+
+  function toggleSidebar() {
+    if (isSidebarVisible) {
+      sidebar.style.transform = 'translateX(100%)';
+      mainContent.style.marginRight = '0';
+    } else {
+      sidebar.style.transform = 'translateX(0)';
+      mainContent.style.marginRight = '14rem';
+    }
+    isSidebarVisible = !isSidebarVisible;
+  }
+
+  sidebarToggle.addEventListener('click', toggleSidebar);
+
+  // Hide sidebar by default on smaller screens
+  function checkScreenSize() {
+    if (window.innerWidth < 1024) {
+      sidebar.style.transform = 'translateX(100%)';
+      mainContent.style.marginRight = '0';
+      isSidebarVisible = false;
+    } else {
+      sidebar.style.transform = 'translateX(0)';
+      mainContent.style.marginRight = '14rem';
+      isSidebarVisible = true;
+    }
+  }
+
+  // Check on load and resize
+  checkScreenSize();
+  window.addEventListener('resize', checkScreenSize);
+});
+
 // Add loading state to form submission
 document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('form').forEach(form => {
@@ -548,7 +666,132 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 });
-</script>
 
+// Enhanced Filter form handling with auto-submit
+document.addEventListener('DOMContentLoaded', function() {
+  const filterForm = document.getElementById('order-filters');
+  const clearFiltersBtn = document.getElementById('clearFilters');
+  const searchInput = document.getElementById('search');
+  const searchSpinner = document.getElementById('searchSpinner');
+  let searchTimeout;
+
+  // Function to submit form with optional delay
+  function submitFormWithDelay(delay = 0) {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      filterForm.submit();
+    }, delay);
+  }
+
+  // Show loading state
+  function showLoading() {
+    searchSpinner.classList.remove('hidden');
+  }
+
+  // Hide loading state
+  function hideLoading() {
+    searchSpinner.classList.add('hidden');
+  }
+
+  // Handle search input with debounce
+  searchInput.addEventListener('input', function() {
+    showLoading();
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      submitFormWithDelay();
+    }, 500); // Wait 500ms after user stops typing
+  });
+
+  // Auto-submit on select changes
+  ['payment_method', 'delivery_type', 'rice_type'].forEach(id => {
+    const select = document.getElementById(id);
+    select.addEventListener('change', () => submitFormWithDelay());
+  });
+
+  // Auto-submit on date changes
+  ['start_date', 'end_date'].forEach(id => {
+    const dateInput = document.getElementById(id);
+    dateInput.addEventListener('change', () => submitFormWithDelay());
+  });
+
+  // Handle clear filters
+  clearFiltersBtn.addEventListener('click', function() {
+    // Reset all form fields
+    filterForm.reset();
+    
+    // Clear URL parameters and reload page, but preserve pagination
+    const url = new URL(window.location.href);
+    const params = new URLSearchParams();
+    
+    // Preserve only pagination parameters
+    if (url.searchParams.has('active_page')) {
+      params.set('active_page', url.searchParams.get('active_page'));
+    }
+    if (url.searchParams.has('cancelled_page')) {
+      params.set('cancelled_page', url.searchParams.get('cancelled_page'));
+    }
+    
+    window.location.href = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`;
+  });
+
+  // Update pagination links to preserve filters
+  document.querySelectorAll('.pagination a').forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      const url = new URL(this.href);
+      const params = new URLSearchParams(window.location.search);
+      
+      // Update appropriate page number while preserving other filters
+      if (url.searchParams.has('active_page')) {
+        params.set('active_page', url.searchParams.get('active_page'));
+      }
+      if (url.searchParams.has('cancelled_page')) {
+        params.set('cancelled_page', url.searchParams.get('cancelled_page'));
+      }
+      
+      window.location.href = `${window.location.pathname}?${params.toString()}`;
+    });
+  });
+
+  // Handle form submission
+  filterForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const params = new URLSearchParams(formData);
+    
+    // Remove empty parameters
+    for (const [key, value] of params.entries()) {
+      if (!value) {
+        params.delete(key);
+      }
+    }
+    
+    // Update URL without reloading
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.pushState({ path: newUrl }, '', newUrl);
+    
+    // Submit the form
+    this.submit();
+  });
+
+  // Add loading state to the page
+  window.addEventListener('beforeunload', showLoading);
+  window.addEventListener('load', hideLoading);
+});
+
+// Add loading animation to the page
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  .loading-spinner {
+    animation: spin 1s linear infinite;
+    border-color: #EAB308;
+    border-right-color: transparent;
+  }
+`;
+document.head.appendChild(style);
+</script>
 </body>
 </html>

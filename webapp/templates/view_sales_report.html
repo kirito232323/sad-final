@@ -69,7 +69,12 @@
 </head>
 <body class="bg-gray-50 text-gray-800 min-h-screen font-sans leading-relaxed overflow-x-hidden">
 
-<header class="fixed top-0 right-0 h-screen w-56 bg-white shadow-lg flex flex-col z-50 border-l border-gray-200">
+<!-- Toggle Sidebar Button -->
+<button id="sidebarToggle" class="fixed top-4 right-4 z-50 bg-white p-2 rounded-lg shadow-lg hover:bg-gray-100 lg:hidden">
+  <i class="fas fa-bars text-gray-600"></i>
+</button>
+
+<header id="sidebar" class="fixed top-0 right-0 h-screen w-56 bg-white shadow-lg flex flex-col z-40 border-l border-gray-200 transition-transform duration-300 ease-in-out lg:translate-x-0">
   <div class="h-14 flex items-center justify-center border-b border-gray-200">
     <a href="#" class="flex items-center space-x-2 select-none text-gray-900 font-bold text-lg tracking-wide">
       <span class="text-yellow-500 text-2xl">🌾</span>
@@ -78,6 +83,7 @@
   </div>
 
   <nav class="flex-1 flex flex-col py-1 pr-1 overflow-y-auto scrollbar-hide">
+    <!-- Main Navigation -->
     <div class="px-2 py-1">
       <span class="block text-1 text-gray-500 font-semibold mb-3">Welcome, {{ request.session.user_name }}!</span>
       <a href="{% url 'dashboard' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 font-semibold hover:text-yellow-600 transition">
@@ -87,99 +93,102 @@
         <i class="fas fa-user-circle w-4 text-yellow-500"></i><span>Profile</span>
       </a>
     </div>
-    
 
     {% if request.session.user_role == 'admin' %}
+    <!-- User Management Section -->
     <div class="mb-2 px-2">
-      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Users</p>
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">User Management</p>
+      <!-- Employee Management -->
       <a href="{% url 'add_user' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
         <i class="fas fa-user-plus w-4 text-yellow-500"></i><span>Add User</span>
       </a>
       <a href="{% url 'edituser' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
         <i class="fas fa-user-edit w-4 text-yellow-500"></i><span>Edit User</span>
       </a>
-      <a href="{% url 'user_account' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-user-circle w-4 text-yellow-500"></i><span>Customer</span>
-      </a>
-
-      
-
-      
-  <!-- New Create Customer Ledger Link -->
-  <a href="{% url 'customer_ledger_create' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-    <i class="fas fa-book w-4 text-yellow-500"></i><span>Create Customer Ledger</span>
-  </a>
-
       <a href="{% url 'logs' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
         <i class="fas fa-file-alt w-4 text-yellow-500"></i><span>User Logs</span>
       </a>
-      <!-- Delete Customer link (no user_id, so go to selection page) -->
-      
-    </div>
-{% endif %}
-    
 
+      <!-- Customer Management -->
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1 mt-4">Customer Management</p>
+      <a href="{% url 'user_account' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+        <i class="fas fa-users w-4 text-yellow-500"></i><span>Customers</span>
+      </a>
+      <a href="{% url 'add_customer' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-user-plus w-4 text-yellow-500"></i><span>Add Customer</span>
+      </a>
+      <a href="{% url 'customer_ledger_create' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-book w-4 text-yellow-500"></i><span>Create Customer Ledger</span>
+      </a>
+    </div>
+    {% endif %}
+
+    <!-- Orders & Transactions -->
     <div class="mb-2 px-2">
-      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Transaction</p>
-      <a href="{% url 'allorder_history' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-truck-moving w-4 text-yellow-500"></i><span>All Orders History</span>
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Orders & Transactions</p>
+      {% if request.session.user_role == 'admin' or request.session.user_role == 'cashier' %}
+      <a href="{% url 'new_sale' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+        <i class="fas fa-cart-plus w-4 text-yellow-500"></i><span>New Order</span>
+      </a>
+      {% endif %}
+      <a href="{% url 'allorder_history' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition {% if request.session.user_role == 'admin' or request.session.user_role == 'cashier' %}mt-1{% endif %}">
+        <i class="fas fa-history w-4 text-yellow-500"></i><span>All Orders History</span>
       </a>
       <a href="{% url 'payment_confirmation' 0 %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-truck-moving w-4 text-yellow-500"></i><span>Payment Confirmation</span>
+        <i class="fas fa-money-check w-4 text-yellow-500"></i><span>Payment Confirmation</span>
       </a>
       <a href="{% url 'delivery_confirmation' 0 %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-truck-moving w-4 text-yellow-500"></i><span>Delivery Confirmation</span>
+        <i class="fas fa-truck w-4 text-yellow-500"></i><span>Delivery Confirmation</span>
       </a>
     </div>
 
-    
     {% if request.session.user_role == 'admin' or request.session.user_role == 'employee' %}
+    <!-- Inventory Management -->
     <div class="mb-2 px-2">
       <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Inventory</p>
       <a href="{% url 'addstock' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
-        <i class="fas fa-boxes w-4 text-yellow-500"></i><span>Inventory</span>
+        <i class="fas fa-boxes w-4 text-yellow-500"></i><span>Manage Inventory</span>
       </a>
       <a href="{% url 'viewstocklevel' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-layer-group w-4 text-yellow-500"></i><span>View Levels</span>
+        <i class="fas fa-layer-group w-4 text-yellow-500"></i><span>View Stock Levels</span>
       </a>
     </div>
     {% endif %}
 
     {% if request.session.user_role == 'admin' or request.session.user_role == 'cashier' %}
+    <!-- Sales Management -->
+    <div class="mb-2 px-2">
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Sales</p>
+      <a href="{% url 'invoice' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+        <i class="fas fa-file-invoice w-4 text-yellow-500"></i><span>Create Invoice</span>
+      </a>
+      <a href="{% url 'view_sales_report' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm bg-yellow-50 text-yellow-600 transition mt-1">
+        <i class="fas fa-chart-line w-4 text-yellow-500"></i><span>Sales Report</span>
+      </a>
+      <a href="{% url 'inventory_turnover' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-sync-alt w-4 text-yellow-500"></i><span>Inventory Turnover</span>
+      </a>
+    </div>
+    {% endif %}
 
-<div class="mb-2 px-2">
-  <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Sales</p>
-  <a href="{% url 'new_sale' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
-    <i class="fas fa-cart-plus w-4 text-yellow-500"></i><span>New Sale</span>
-  </a>
-  <a href="{% url 'invoice' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-    <i class="fas fa-file-invoice w-4 text-yellow-500"></i><span>Create Invoice</span>
-  </a>
-  
-  <a href="{% url 'view_sales_report' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-    <i class="fas fa-chart-line w-4 text-yellow-500"></i><span>Report</span>
-  </a>
-  <a href="{% url 'inventory_turnover' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-    <i class="fas fa-sync-alt w-4 text-yellow-500"></i><span>Inventory Turnover</span>
-  </a>
-</div>
-  {% endif %}
-
-
-
+    <!-- Logout -->
     <div class="border-t border-gray-200 mt-auto px-2 py-4">
       <a href="{% url 'logout' %}" onclick="return confirm('Logout?');" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-red-100 hover:text-red-600 transition font-semibold text-red-500 mt-2">
         <i class="fas fa-sign-out-alt w-4"></i><span>Logout</span>
       </a>
-    
     </div>
   </nav>
 </header>
 
-
 <!-- Push content so it's not behind the sidebar -->
-<div class="mr-56 min-h-screen bg-gray-50">
-  <main class="max-w-screen-xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+<div id="mainContent" class="lg:mr-56 min-h-screen bg-gray-50 transition-all duration-300">
+  <main class="max-w-7xl mx-auto px-6 py-8">
+    <!-- Page Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">Sales Report</h1>
+      <p class="mt-2 text-sm text-gray-600">View and analyze your sales data</p>
+    </div>
+
     <!-- Messages -->
     {% if messages %}
       <div class="mb-6">
@@ -201,191 +210,133 @@
       </div>
     {% endif %}
 
-</nav>
-
-<!-- Page Content -->
-<main class="max-w-7xl mx-auto p-8">
-  <div class="mb-8">
-    <h2 class="text-3xl font-bold text-gray-900">Sales Reports</h2>
-    <p class="mt-1 text-sm text-gray-500">View and analyze your sales data</p>
-  </div>
-
-  <!-- Report Type Tabs -->
-  <div class="mb-8 border-b border-gray-200">
-    <nav class="flex space-x-8" aria-label="Report Types">
-      <button id="sales-report-tab" class="report-tab active" onclick="showReport('sales')">
-        <i class="fas fa-chart-line mr-2"></i>Sales Reports
-      </button>
-      <button id="stock-movement-tab" class="report-tab" onclick="showReport('stock')">
-        <i class="fas fa-box mr-2"></i>Stock Movement Reports
-      </button>
-    </nav>
-  </div>
-
-  <!-- Sales Report Filters -->
-  <div id="sales-report-filters" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <div>
-        <label for="group-by" class="block text-sm font-medium text-gray-700 mb-1">Group By</label>
-        <select id="group-by" class="filter-input w-full" onchange="applyFilters()">
-          <option value="rice_type" {% if group_by == 'rice_type' %}selected{% endif %}>Rice Type</option>
-          <option value="cashier" {% if group_by == 'cashier' %}selected{% endif %}>Cashier</option>
-        </select>
-      </div>
-
-      <div>
-        <label for="start-date" class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-        <input type="date" id="start-date" value="{{ start_date }}" class="filter-input w-full" onchange="applyFilters()">
-      </div>
-
-      <div>
-        <label for="end-date" class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-        <input type="date" id="end-date" value="{{ end_date }}" class="filter-input w-full" onchange="applyFilters()">
-      </div>
-
-      <div>
-        <label for="sales-period" class="block text-sm font-medium text-gray-700 mb-1">Period</label>
-        <select id="sales-period" class="filter-input w-full" onchange="applyFilters()">
-          <option value="">-- Select Period --</option>
-          <option value="daily" {% if sales_period == 'daily' %}selected{% endif %}>Daily</option>
-          <option value="weekly" {% if sales_period == 'weekly' %}selected{% endif %}>Weekly</option>
-          <option value="monthly" {% if sales_period == 'monthly' %}selected{% endif %}>Monthly</option>
-        </select>
-      </div>
-    </div>
-  </div>
-
-  <!-- Sales Highlights -->
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-    {% if best_selling and low_selling %}
-    <div class="stats-card">
-      <div class="flex items-center">
-        <div class="p-3 rounded-lg bg-green-100 text-green-600">
-          <i class="fas fa-arrow-up text-xl"></i>
-        </div>
-        <div class="ml-4">
-          <h4 class="text-sm font-medium text-gray-500">Best-Selling Rice Type</h4>
-          <p class="text-lg font-semibold text-gray-900">{{ best_selling.rice_type__rice_type }}</p>
-          <p class="text-sm text-gray-500">{{ best_selling.total_quantity }} sacks sold</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="stats-card">
-      <div class="flex items-center">
-        <div class="p-3 rounded-lg bg-red-100 text-red-600">
-          <i class="fas fa-arrow-down text-xl"></i>
-        </div>
-        <div class="ml-4">
-          <h4 class="text-sm font-medium text-gray-500">Lowest-Selling Rice Type</h4>
-          <p class="text-lg font-semibold text-gray-900">{{ low_selling.rice_type__rice_type }}</p>
-          <p class="text-sm text-gray-500">{{ low_selling.total_quantity }} sacks sold</p>
-        </div>
-      </div>
-    </div>
-    {% else %}
-    <div class="stats-card col-span-2">
-      <div class="flex items-center justify-center text-gray-500">
-        <i class="fas fa-chart-bar text-3xl mr-3"></i>
-        <p class="text-lg">No sales data available for selected filters</p>
-      </div>
-    </div>
-    {% endif %}
-  </div>
-
-  <!-- Sales Report Table -->
-  <div id="sales-report-section" class="table-container">
-    <div class="p-6 border-b border-gray-100">
-      <div class="flex justify-between items-center">
-        <h3 class="text-lg font-semibold text-gray-900">Sales Summary</h3>
-        <button onclick="exportSalesReportToExcel('sales-report-table')" class="export-btn">
-          <i class="fas fa-download mr-2"></i>Export to Excel
+    <!-- Report Type Tabs -->
+    <div class="mb-8 border-b border-gray-200">
+      <nav class="flex space-x-8" aria-label="Report Types">
+        <button id="sales-report-tab" class="report-tab active" onclick="showReport('sales')">
+          <i class="fas fa-chart-line mr-2"></i>Sales Reports
         </button>
+        <button id="stock-movement-tab" class="report-tab" onclick="showReport('stock')">
+          <i class="fas fa-box mr-2"></i>Stock Movement Reports
+        </button>
+      </nav>
+    </div>
+
+    <!-- Sales Report Filters -->
+    <div id="sales-report-filters" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div>
+          <label for="group-by" class="block text-sm font-medium text-gray-700 mb-1">Group By</label>
+          <select id="group-by" class="filter-input w-full" onchange="applyFilters()">
+            <option value="rice_type" {% if group_by == 'rice_type' %}selected{% endif %}>Rice Type</option>
+            <option value="cashier" {% if group_by == 'cashier' %}selected{% endif %}>Cashier</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="start-date" class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+          <input type="date" id="start-date" value="{{ start_date }}" class="filter-input w-full" onchange="applyFilters()">
+        </div>
+
+        <div>
+          <label for="end-date" class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+          <input type="date" id="end-date" value="{{ end_date }}" class="filter-input w-full" onchange="applyFilters()">
+        </div>
+
+        <div>
+          <label for="sales-period" class="block text-sm font-medium text-gray-700 mb-1">Period</label>
+          <select id="sales-period" class="filter-input w-full" onchange="applyFilters()">
+            <option value="">-- Select Period --</option>
+            <option value="daily" {% if sales_period == 'daily' %}selected{% endif %}>Daily</option>
+            <option value="weekly" {% if sales_period == 'weekly' %}selected{% endif %}>Weekly</option>
+            <option value="monthly" {% if sales_period == 'monthly' %}selected{% endif %}>Monthly</option>
+          </select>
+        </div>
       </div>
     </div>
 
-    <div class="overflow-x-auto">
-      <table id="sales-report-table" class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="table-header">
-              {% if group_by == 'cashier' %}Cashier{% else %}Rice Type{% endif %}
-            </th>
-            <th class="table-header">Date</th>
-            <th class="table-header text-right">Quantity Sold</th>
-            <th class="table-header text-right">Revenue</th>
-          </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          {% for row in report_data %}
-          <tr class="hover:bg-gray-50 transition-colors">
-            <td class="table-cell font-medium">
-              {% if group_by == 'cashier' %}
-                {{ row.employee_full_name }}
-              {% else %}
-                {{ row.rice_type__rice_type }}
-              {% endif %}
-            </td>
-            <td class="table-cell">{{ row.created_date|date:"M d, Y" }}</td>
-            <td class="table-cell text-right">{{ row.total_quantity }}</td>
-            <td class="table-cell text-right font-medium">₱{{ row.total_revenue|floatformat:2|intcomma }}</td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="4" class="px-6 py-8 text-center text-gray-500">
-              <div class="flex flex-col items-center">
-                <i class="fas fa-chart-pie text-4xl mb-2"></i>
-                <p class="text-lg font-medium">No data available</p>
-                <p class="text-sm">Try adjusting your filters</p>
-              </div>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
+    <!-- Sales Highlights -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      {% if best_selling and low_selling %}
+      <div class="stats-card">
+        <div class="flex items-center">
+          <div class="p-3 rounded-lg bg-green-100 text-green-600">
+            <i class="fas fa-arrow-up text-xl"></i>
+          </div>
+          <div class="ml-4">
+            <h4 class="text-sm font-medium text-gray-500">Best-Selling Rice Type</h4>
+            <p class="text-lg font-semibold text-gray-900">{{ best_selling.rice_type__rice_type }}</p>
+            <p class="text-sm text-gray-500">{{ best_selling.total_quantity }} sacks sold</p>
+          </div>
+        </div>
+      </div>
 
-  <!-- Stock Movement Report Section -->
-  <div id="stock-movement-section" class="hidden">
-    <div class="table-container">
+      <div class="stats-card">
+        <div class="flex items-center">
+          <div class="p-3 rounded-lg bg-red-100 text-red-600">
+            <i class="fas fa-arrow-down text-xl"></i>
+          </div>
+          <div class="ml-4">
+            <h4 class="text-sm font-medium text-gray-500">Lowest-Selling Rice Type</h4>
+            <p class="text-lg font-semibold text-gray-900">{{ low_selling.rice_type__rice_type }}</p>
+            <p class="text-sm text-gray-500">{{ low_selling.total_quantity }} sacks sold</p>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="stats-card col-span-2">
+        <div class="flex items-center justify-center text-gray-500">
+          <i class="fas fa-chart-bar text-3xl mr-3"></i>
+          <p class="text-lg">No sales data available for selected filters</p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Sales Report Table -->
+    <div id="sales-report-section" class="table-container">
       <div class="p-6 border-b border-gray-100">
         <div class="flex justify-between items-center">
-          <h3 class="text-lg font-semibold text-gray-900">Stock Movement Summary</h3>
-          <button onclick="exportStockMovementToExcel('stock-movement-table')" class="export-btn">
+          <h3 class="text-lg font-semibold text-gray-900">Sales Summary</h3>
+          <button onclick="exportSalesReportToExcel('sales-report-table')" class="export-btn">
             <i class="fas fa-download mr-2"></i>Export to Excel
           </button>
         </div>
       </div>
 
       <div class="overflow-x-auto">
-        <table id="stock-movement-table" class="min-w-full divide-y divide-gray-200">
+        <table id="sales-report-table" class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="table-header">Rice Type</th>
-              <th class="table-header">Packaging</th>
-              <th class="table-header text-right">Stock In</th>
-              <th class="table-header text-right">Stock Out</th>
-              <th class="table-header text-right">Current Stock</th>
-              <th class="table-header">Last Updated</th>
+              <th class="table-header">
+                {% if group_by == 'cashier' %}Cashier{% else %}Rice Type{% endif %}
+              </th>
+              <th class="table-header">Date</th>
+              <th class="table-header text-right">Quantity Sold</th>
+              <th class="table-header text-right">Revenue</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            {% for item in stock_movement_data %}
+            {% for row in report_data %}
             <tr class="hover:bg-gray-50 transition-colors">
-              <td class="table-cell font-medium">{{ item.rice_type.rice_type }}</td>
-              <td class="table-cell">{{ item.packaging }}</td>
-              <td class="table-cell text-right">{{ item.stock_in }}</td>
-              <td class="table-cell text-right">{{ item.stock_out }}</td>
-              <td class="table-cell text-right">{{ item.current_stock }}</td>
-              <td class="table-cell">{{ item.last_updated|date:"Y-m-d H:i" }}</td>
+              <td class="table-cell font-medium">
+                {% if group_by == 'cashier' %}
+                  {{ row.employee_full_name }}
+                {% else %}
+                  {{ row.rice_type__rice_type }}
+                {% endif %}
+              </td>
+              <td class="table-cell">{{ row.created_date|date:"M d, Y" }}</td>
+              <td class="table-cell text-right">{{ row.total_quantity }}</td>
+              <td class="table-cell text-right font-medium">₱{{ row.total_revenue|floatformat:2|intcomma }}</td>
             </tr>
             {% empty %}
             <tr>
-              <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+              <td colspan="4" class="px-6 py-8 text-center text-gray-500">
                 <div class="flex flex-col items-center">
-                  <i class="fas fa-box-open text-4xl mb-2"></i>
-                  <p class="text-lg font-medium">No stock movement data available</p>
+                  <i class="fas fa-chart-pie text-4xl mb-2"></i>
+                  <p class="text-lg font-medium">No data available</p>
+                  <p class="text-sm">Try adjusting your filters</p>
                 </div>
               </td>
             </tr>
@@ -394,10 +345,97 @@
         </table>
       </div>
     </div>
-  </div>
-</main>
+
+    <!-- Stock Movement Report Section -->
+    <div id="stock-movement-section" class="hidden">
+      <div class="table-container">
+        <div class="p-6 border-b border-gray-100">
+          <div class="flex justify-between items-center">
+            <h3 class="text-lg font-semibold text-gray-900">Stock Movement Summary</h3>
+            <button onclick="exportStockMovementToExcel('stock-movement-table')" class="export-btn">
+              <i class="fas fa-download mr-2"></i>Export to Excel
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table id="stock-movement-table" class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="table-header">Rice Type</th>
+                <th class="table-header">Packaging</th>
+                <th class="table-header text-right">Stock In</th>
+                <th class="table-header text-right">Stock Out</th>
+                <th class="table-header text-right">Current Stock</th>
+                <th class="table-header">Last Updated</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              {% for item in stock_movement_data %}
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="table-cell font-medium">{{ item.rice_type.rice_type }}</td>
+                <td class="table-cell">{{ item.packaging }}</td>
+                <td class="table-cell text-right">{{ item.stock_in }}</td>
+                <td class="table-cell text-right">{{ item.stock_out }}</td>
+                <td class="table-cell text-right">{{ item.current_stock }}</td>
+                <td class="table-cell">{{ item.last_updated|date:"Y-m-d H:i" }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                  <div class="flex flex-col items-center">
+                    <i class="fas fa-box-open text-4xl mb-2"></i>
+                    <p class="text-lg font-medium">No stock movement data available</p>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+  const sidebar = document.getElementById('sidebar');
+  const mainContent = document.getElementById('mainContent');
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  let isSidebarVisible = true;
+
+  function toggleSidebar() {
+    if (isSidebarVisible) {
+      sidebar.style.transform = 'translateX(100%)';
+      mainContent.style.marginRight = '0';
+    } else {
+      sidebar.style.transform = 'translateX(0)';
+      mainContent.style.marginRight = '14rem';
+    }
+    isSidebarVisible = !isSidebarVisible;
+  }
+
+  sidebarToggle.addEventListener('click', toggleSidebar);
+
+  // Hide sidebar by default on smaller screens
+  function checkScreenSize() {
+    if (window.innerWidth < 1024) {
+      sidebar.style.transform = 'translateX(100%)';
+      mainContent.style.marginRight = '0';
+      isSidebarVisible = false;
+    } else {
+      sidebar.style.transform = 'translateX(0)';
+      mainContent.style.marginRight = '14rem';
+      isSidebarVisible = true;
+    }
+  }
+
+  // Check on load and resize
+  checkScreenSize();
+  window.addEventListener('resize', checkScreenSize);
+});
+
 function applyFilters() {
   const groupBy = document.getElementById('group-by').value;
   const startDate = document.getElementById('start-date').value;

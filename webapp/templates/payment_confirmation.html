@@ -7,7 +7,11 @@
   <title>Payment Confirmation - Dragon Ricemill</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
     html { scroll-behavior: smooth; }
     .dropdown:hover .dropdown-menu {
       opacity: 1;
@@ -22,13 +26,13 @@
       @apply px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200;
     }
     .payment-badge-gcash {
-      @apply bg-blue-100 text-blue-800 hover:bg-blue-200;
+      @apply bg-blue-100 text-blue-800 hover:bg-blue-200 border border-blue-200;
     }
     .payment-badge-credit {
-      @apply bg-purple-100 text-purple-800 hover:bg-purple-200;
+      @apply bg-purple-100 text-purple-800 hover:bg-purple-200 border border-purple-200;
     }
     .payment-badge-cash {
-      @apply bg-green-100 text-green-800 hover:bg-green-200;
+      @apply bg-green-100 text-green-800 hover:bg-green-200 border border-green-200;
     }
     .delivery-badge {
       @apply px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200;
@@ -312,9 +316,14 @@
     }
   </style>
 </head>
-<body class="bg-gray-50 text-gray-800 min-h-screen font-sans leading-relaxed antialiased">
+<body class="bg-gray-50 text-gray-800 min-h-screen font-sans leading-relaxed overflow-x-hidden">
 
-<header class="fixed top-0 right-0 h-screen w-56 bg-white shadow-lg flex flex-col z-50 border-l border-gray-200">
+<!-- Toggle Sidebar Button -->
+<button id="sidebarToggle" class="fixed top-4 right-4 z-50 bg-white p-2 rounded-lg shadow-lg hover:bg-gray-100 lg:hidden">
+  <i class="fas fa-bars text-gray-600"></i>
+</button>
+
+<header id="sidebar" class="fixed top-0 right-0 h-screen w-56 bg-white shadow-lg flex flex-col z-40 border-l border-gray-200 transition-transform duration-300 ease-in-out lg:translate-x-0">
   <div class="h-14 flex items-center justify-center border-b border-gray-200">
     <a href="#" class="flex items-center space-x-2 select-none text-gray-900 font-bold text-lg tracking-wide">
       <span class="text-yellow-500 text-2xl">🌾</span>
@@ -323,6 +332,7 @@
   </div>
 
   <nav class="flex-1 flex flex-col py-1 pr-1 overflow-y-auto scrollbar-hide">
+    <!-- Main Navigation -->
     <div class="px-2 py-1">
       <span class="block text-1 text-gray-500 font-semibold mb-3">Welcome, {{ request.session.user_name }}!</span>
       <a href="{% url 'dashboard' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 font-semibold hover:text-yellow-600 transition">
@@ -332,97 +342,95 @@
         <i class="fas fa-user-circle w-4 text-yellow-500"></i><span>Profile</span>
       </a>
     </div>
-    
 
     {% if request.session.user_role == 'admin' %}
+    <!-- User Management Section -->
     <div class="mb-2 px-2">
-      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Users</p>
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">User Management</p>
+      <!-- Employee Management -->
       <a href="{% url 'add_user' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
         <i class="fas fa-user-plus w-4 text-yellow-500"></i><span>Add User</span>
       </a>
       <a href="{% url 'edituser' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
         <i class="fas fa-user-edit w-4 text-yellow-500"></i><span>Edit User</span>
       </a>
-      <a href="{% url 'user_account' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-user-circle w-4 text-yellow-500"></i><span>Customer</span>
-      </a>
-
-      
-
-      
-  <!-- New Create Customer Ledger Link -->
-  <a href="{% url 'customer_ledger_create' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-    <i class="fas fa-book w-4 text-yellow-500"></i><span>Create Customer Ledger</span>
-  </a>
-
       <a href="{% url 'logs' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
         <i class="fas fa-file-alt w-4 text-yellow-500"></i><span>User Logs</span>
       </a>
-      <!-- Delete Customer link (no user_id, so go to selection page) -->
-      
-    </div>
-{% endif %}
-    
 
-    <div class="mb-2 px-2">
-      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Transaction</p>
-      <a href="{% url 'allorder_history' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-truck-moving w-4 text-yellow-500"></i><span>All Orders History</span>
+      <!-- Customer Management -->
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1 mt-4">Customer Management</p>
+      <a href="{% url 'user_account' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+        <i class="fas fa-users w-4 text-yellow-500"></i><span>Customers</span>
       </a>
-      <a href="{% url 'payment_confirmation' 0 %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-truck-moving w-4 text-yellow-500"></i><span>Payment Confirmation</span>
+      <a href="{% url 'add_customer' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-user-plus w-4 text-yellow-500"></i><span>Add Customer</span>
+      </a>
+      <a href="{% url 'customer_ledger_create' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-book w-4 text-yellow-500"></i><span>Create Customer Ledger</span>
+      </a>
+    </div>
+    {% endif %}
+
+    <!-- Orders & Transactions -->
+    <div class="mb-2 px-2">
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Orders & Transactions</p>
+      {% if request.session.user_role == 'admin' or request.session.user_role == 'cashier' %}
+      <a href="{% url 'new_sale' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+        <i class="fas fa-cart-plus w-4 text-yellow-500"></i><span>New Order</span>
+      </a>
+      {% endif %}
+      <a href="{% url 'allorder_history' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition {% if request.session.user_role == 'admin' or request.session.user_role == 'cashier' %}mt-1{% endif %}">
+        <i class="fas fa-history w-4 text-yellow-500"></i><span>All Orders History</span>
+      </a>
+      <a href="{% url 'payment_confirmation' 0 %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm bg-yellow-50 text-yellow-600 transition mt-1">
+        <i class="fas fa-money-check w-4 text-yellow-500"></i><span>Payment Confirmation</span>
       </a>
       <a href="{% url 'delivery_confirmation' 0 %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-truck-moving w-4 text-yellow-500"></i><span>Delivery Confirmation</span>
+        <i class="fas fa-truck w-4 text-yellow-500"></i><span>Delivery Confirmation</span>
       </a>
     </div>
 
-    
     {% if request.session.user_role == 'admin' or request.session.user_role == 'employee' %}
+    <!-- Inventory Management -->
     <div class="mb-2 px-2">
       <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Inventory</p>
       <a href="{% url 'addstock' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
-        <i class="fas fa-boxes w-4 text-yellow-500"></i><span>Inventory</span>
+        <i class="fas fa-boxes w-4 text-yellow-500"></i><span>Manage Inventory</span>
       </a>
       <a href="{% url 'viewstocklevel' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-layer-group w-4 text-yellow-500"></i><span>View Levels</span>
+        <i class="fas fa-layer-group w-4 text-yellow-500"></i><span>View Stock Levels</span>
       </a>
     </div>
     {% endif %}
 
     {% if request.session.user_role == 'admin' or request.session.user_role == 'cashier' %}
+    <!-- Sales Management -->
+    <div class="mb-2 px-2">
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Sales</p>
+      <a href="{% url 'invoice' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+        <i class="fas fa-file-invoice w-4 text-yellow-500"></i><span>Create Invoice</span>
+      </a>
+      <a href="{% url 'view_sales_report' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-chart-line w-4 text-yellow-500"></i><span>Sales Report</span>
+      </a>
+      <a href="{% url 'inventory_turnover' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-sync-alt w-4 text-yellow-500"></i><span>Inventory Turnover</span>
+      </a>
+    </div>
+    {% endif %}
 
-<div class="mb-2 px-2">
-  <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Sales</p>
-  <a href="{% url 'new_sale' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
-    <i class="fas fa-cart-plus w-4 text-yellow-500"></i><span>New Sale</span>
-  </a>
-  <a href="{% url 'invoice' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-    <i class="fas fa-file-invoice w-4 text-yellow-500"></i><span>Create Invoice</span>
-  </a>
-  
-  <a href="{% url 'view_sales_report' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-    <i class="fas fa-chart-line w-4 text-yellow-500"></i><span>Report</span>
-  </a>
-  <a href="{% url 'inventory_turnover' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-    <i class="fas fa-sync-alt w-4 text-yellow-500"></i><span>Inventory Turnover</span>
-  </a>
-</div>
-  {% endif %}
-
-
-
+    <!-- Logout -->
     <div class="border-t border-gray-200 mt-auto px-2 py-4">
       <a href="{% url 'logout' %}" onclick="return confirm('Logout?');" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-red-100 hover:text-red-600 transition font-semibold text-red-500 mt-2">
         <i class="fas fa-sign-out-alt w-4"></i><span>Logout</span>
       </a>
-    
     </div>
   </nav>
 </header>
 
-
-<main class="mr-64 p-8">
+<!-- Push content so it's not behind the sidebar -->
+<div id="mainContent" class="lg:mr-56 min-h-screen bg-gray-50 transition-all duration-300">
   <div class="max-w-5xl mx-auto">
     <!-- Page Header -->
     <div class="mb-8">
@@ -433,52 +441,70 @@
       </h1>
     </div>
 
+
     <!-- Stats Overview -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <div class="bg-white rounded-xl p-6 card-shadow hover-scale">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <!-- Pending Payments -->
+      <div class="bg-white rounded-lg p-4 card-shadow hover-scale">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600">Pending Payments</p>
-            <h3 class="text-2xl font-bold text-yellow-600 mt-1">{{ pending_count|default:0 }}</h3>
+            <p class="text-xs font-medium text-gray-600">Pending Payments</p>
+            <h3 class="text-xl font-bold text-yellow-600 mt-0.5">{{ pending_count|default:0 }}</h3>
           </div>
-          <div class="bg-yellow-100 p-3 rounded-lg">
-            <i class="fas fa-clock text-yellow-600"></i>
+          <div class="bg-yellow-100 p-2 rounded-lg">
+            <i class="fas fa-clock text-yellow-600 text-sm"></i>
           </div>
         </div>
       </div>
 
-      <div class="bg-white rounded-xl p-6 card-shadow hover-scale">
+      <!-- Total Amount -->
+      <div class="bg-white rounded-lg p-4 card-shadow hover-scale">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600">Total Amount</p>
-            <h3 class="text-2xl font-bold text-green-600 mt-1">₱{{ total_amount|default:0|floatformat:2|intcomma }}</h3>
+            <p class="text-xs font-medium text-gray-600">Total Amount</p>
+            <h3 class="text-xl font-bold text-green-600 mt-0.5">₱{{ total_amount|default:0|floatformat:2|intcomma }}</h3>
           </div>
-          <div class="bg-green-100 p-3 rounded-lg">
-            <i class="fas fa-money-bill-wave text-green-600"></i>
+          <div class="bg-green-100 p-2 rounded-lg">
+            <i class="fas fa-money-bill-wave text-green-600 text-sm"></i>
           </div>
         </div>
       </div>
 
-      <div class="bg-white rounded-xl p-6 card-shadow hover-scale">
+      <!-- GCash -->
+      <div class="bg-white rounded-lg p-4 card-shadow hover-scale">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600">GCash Payments</p>
-            <h3 class="text-2xl font-bold text-blue-600 mt-1">{{ gcash_count|default:0 }}</h3>
+            <p class="text-xs font-medium text-gray-600">GCash</p>
+            <h3 class="text-xl font-bold text-blue-600 mt-0.5">{{ gcash_count|default:0 }}</h3>
           </div>
-          <div class="bg-blue-100 p-3 rounded-lg">
-            <i class="fas fa-mobile-alt text-blue-600"></i>
+          <div class="bg-blue-100 p-2 rounded-lg">
+            <i class="fas fa-mobile-alt text-blue-600 text-sm"></i>
           </div>
         </div>
       </div>
 
-      <div class="bg-white rounded-xl p-6 card-shadow hover-scale">
+      <!-- Credit Card -->
+      <div class="bg-white rounded-lg p-4 card-shadow hover-scale">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600">Credit Card Payments</p>
-            <h3 class="text-2xl font-bold text-purple-600 mt-1">{{ credit_count|default:0 }}</h3>
+            <p class="text-xs font-medium text-gray-600">Credit Card</p>
+            <h3 class="text-xl font-bold text-purple-600 mt-0.5">{{ credit_count|default:0 }}</h3>
           </div>
-          <div class="bg-purple-100 p-3 rounded-lg">
-            <i class="fas fa-credit-card text-purple-600"></i>
+          <div class="bg-purple-100 p-2 rounded-lg">
+            <i class="fas fa-credit-card text-purple-600 text-sm"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cash -->
+      <div class="bg-white rounded-lg p-4 card-shadow hover-scale">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-medium text-gray-600">Cash</p>
+            <h3 class="text-xl font-bold text-emerald-600 mt-0.5">{{ cash_count|default:0 }}</h3>
+          </div>
+          <div class="bg-emerald-100 p-2 rounded-lg">
+            <i class="fas fa-money-bill text-emerald-600 text-sm"></i>
           </div>
         </div>
       </div>
@@ -496,13 +522,6 @@
 
     <!-- Filters Section -->
     <div class="bg-white rounded-xl shadow-md mb-8">
-      <div class="p-6 border-b border-gray-200">
-        <div class="flex items-center gap-2">
-          <i class="fas fa-filter text-yellow-500"></i>
-          <h2 class="text-lg font-semibold">Search & Filters</h2>
-        </div>
-      </div>
-      
       <div class="p-6">
         <form id="payment-filters" method="get" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <!-- Search Field -->
@@ -514,7 +533,8 @@
                      id="search" 
                      class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all text-sm" 
                      placeholder="Enter Order ID or name..."
-                     value="{{ request.GET.search }}">
+                     value="{{ request.GET.search }}"
+                     oninput="submitForm()">
               <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
             </div>
           </div>
@@ -525,8 +545,10 @@
             <div class="relative">
               <select name="payment_method" 
                       id="payment_method" 
-                      class="w-full py-2.5 pl-4 pr-10 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all appearance-none text-sm">
+                      class="w-full py-2.5 pl-4 pr-10 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all appearance-none text-sm"
+                      onchange="submitForm()">
                 <option value="">All Payment Methods</option>
+                <option value="cash" {% if request.GET.payment_method == 'cash' %}selected{% endif %}>Cash</option>
                 <option value="gcash" {% if request.GET.payment_method == 'gcash' %}selected{% endif %}>GCash</option>
                 <option value="credit" {% if request.GET.payment_method == 'credit' %}selected{% endif %}>Credit Card</option>
               </select>
@@ -543,25 +565,18 @@
                        name="start_date" 
                        id="start_date" 
                        class="w-full py-2.5 px-4 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all text-sm"
-                       value="{{ request.GET.start_date }}">
+                       value="{{ request.GET.start_date }}"
+                       onchange="submitForm()">
               </div>
               <div class="relative">
                 <input type="date" 
                        name="end_date" 
                        id="end_date" 
                        class="w-full py-2.5 px-4 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all text-sm"
-                       value="{{ request.GET.end_date }}">
+                       value="{{ request.GET.end_date }}"
+                       onchange="submitForm()">
               </div>
             </div>
-          </div>
-
-          <!-- Filter Button -->
-          <div class="lg:col-span-4 flex justify-end">
-            <button type="submit" 
-                    class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-all duration-200 flex items-center gap-2 text-sm font-medium shadow-sm hover:shadow">
-              <i class="fas fa-filter"></i>
-              <span>Apply Filters</span>
-            </button>
           </div>
         </form>
       </div>
@@ -606,9 +621,10 @@
                 data-total-cost="{{ order.total_cost }}"
                 data-price-per-sack="{{ order.total_cost|default:0|floatformat:2 }}"
                 data-discount="{{ order.discount|default:'0.00' }}"
-                data-receiver-name="{{ order.receiver_name|default:'' }}"
+                data-receiver-name="{{ order.receiver_name|default_if_none:'' }}"
                 data-receiver-contact="{{ order.receiver_mobile_number|default:'' }}"
                 data-payment-method="{{ order.payment_method }}"
+                data-customer-email="{{ order.customer.email|default:'N/A' }}"
                 {% if order.customer and order.customer.address %}
                 data-house-no="{{ order.customer.address.house_unit_number|default:'' }}"
                 data-building="{{ order.customer.address.building_name|default:'' }}"
@@ -697,7 +713,7 @@
     <div class="mt-6 flex justify-center">
       <div class="flex items-center gap-2">
         {% if orders.has_previous %}
-        <a href="?page={{ orders.previous_page_number }}" 
+        <a href="?page={{ orders.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.payment_method %}&payment_method={{ request.GET.payment_method }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}" 
            class="flex items-center px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all">
           <i class="fas fa-chevron-left mr-2"></i>
           Previous
@@ -709,7 +725,7 @@
         </span>
 
         {% if orders.has_next %}
-        <a href="?page={{ orders.next_page_number }}" 
+        <a href="?page={{ orders.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.payment_method %}&payment_method={{ request.GET.payment_method }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}" 
            class="flex items-center px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all">
           Next
           <i class="fas fa-chevron-right ml-2"></i>
@@ -719,228 +735,95 @@
     </div>
     {% endif %}
   </div>
-</main>
+</div>
 
 <script>
-// Auto-hide success messages
-document.addEventListener('DOMContentLoaded', function() {
-  // Auto-hide messages
-  setTimeout(function() {
-    const messages = document.querySelectorAll('.message-toast');
-    messages.forEach(function(message) {
-      message.classList.add('hiding');
-      setTimeout(() => message.remove(), 300);
+// Add this at the beginning of your script section
+let filterTimeout;
+
+function submitForm() {
+    clearTimeout(filterTimeout);
+    filterTimeout = setTimeout(() => {
+        document.getElementById('payment-filters').submit();
+    }, 500); // Wait for 500ms after the last change before submitting
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  // Auto-hide success messages after 5 seconds
+  setTimeout(() => {
+    document.querySelectorAll('.message-toast').forEach(msg => {
+      msg.classList.add('hiding');
+      setTimeout(() => msg.remove(), 300);
     });
   }, 5000);
 
-  // Add loading state to form submission
+  // Add loading state to all forms on submit
   document.querySelectorAll('form').forEach(form => {
-    form.addEventListener('submit', function() {
-      const button = this.querySelector('button[type="submit"]');
+    form.addEventListener('submit', function () {
+      const button = form.querySelector('button[type="submit"]');
       if (button) {
         button.disabled = true;
         button.classList.add('opacity-75', 'cursor-not-allowed');
         const icon = button.querySelector('i');
-        if (icon) {
-          icon.className = 'fas fa-spinner fa-spin';
-        }
+        if (icon) icon.className = 'fas fa-spinner fa-spin';
       }
     });
   });
-});
 
-// Add form submission handler
-document.addEventListener('DOMContentLoaded', function() {
+  // Payment form handler
   const paymentForm = document.getElementById('payment-form');
   if (paymentForm) {
-    paymentForm.addEventListener('submit', function(e) {
+    paymentForm.addEventListener('submit', function (e) {
       e.preventDefault();
-      
+
       const orderId = document.getElementById('modal-order-id').value;
       const amount = parseFloat(document.getElementById('payment-amount').value);
       const totalAmount = parseFloat(document.getElementById('payment-total').textContent.replace('₱', ''));
       const paymentMethod = document.getElementById('modal-payment-method').value;
-      
+
       if (isNaN(amount) || amount < totalAmount) {
         alert('Please enter a valid payment amount that is equal to or greater than the total amount.');
         return;
       }
-      
-      // Update form action with the specific order ID
+
+      // Ask user if they want to print invoice
+      const wantsPrintInvoice = confirm('Would you like to print the invoice after payment confirmation?');
+
+      // Set action URL with dynamic order ID
       this.action = "{% url 'payment_confirmation' 0 %}".replace('0', orderId);
-      
-      // Add amount_paid and amount_change to the form
+
+      // Append hidden inputs
       const amountInput = document.createElement('input');
       amountInput.type = 'hidden';
       amountInput.name = 'amount';
       amountInput.value = amount;
       this.appendChild(amountInput);
-      
-      const changeAmount = amount - totalAmount;
+
       const changeInput = document.createElement('input');
       changeInput.type = 'hidden';
       changeInput.name = 'amount_change';
-      changeInput.value = changeAmount;
+      changeInput.value = (amount - totalAmount).toFixed(2);
       this.appendChild(changeInput);
-      
-      // Submit the form
+
+      // Add print invoice preference
+      const printInvoiceInput = document.createElement('input');
+      printInvoiceInput.type = 'hidden';
+      printInvoiceInput.name = 'print_invoice';
+      printInvoiceInput.value = wantsPrintInvoice;
+      this.appendChild(printInvoiceInput);
+
       this.submit();
     });
   }
-});
 
-// Update the openPaymentModal function
-function openPaymentModal(orderId, totalAmount) {
-  const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
-  
-  // Set basic order info
-  document.getElementById('payment-order-id').textContent = orderId;
-  document.getElementById('modal-order-id').value = orderId;
-  document.getElementById('payment-date').textContent = row.querySelector('td:nth-child(2)').textContent;
-  
-  // Set customer info
-  const customerName = row.querySelector('[data-customer-name]').getAttribute('data-customer-name');
-  document.getElementById('payment-customer-name').textContent = customerName || 'N/A';
-  const customerContact = row.querySelector('td:nth-child(4)').textContent;
-  document.getElementById('payment-customer-contact').textContent = customerContact || 'N/A';
-  
-  // Format address
-  const addressParts = [];
-  
-  // Get address parts and only add non-empty ones
-  const houseNo = row.getAttribute('data-house-no');
-  const building = row.getAttribute('data-building');
-  const street = row.getAttribute('data-street');
-  const barangay = row.getAttribute('data-barangay');
-  const city = row.getAttribute('data-city');
-  const province = row.getAttribute('data-province');
-  const zipcode = row.getAttribute('data-zipcode');
-  
-  if (houseNo) addressParts.push(houseNo);
-  if (building) addressParts.push(building);
-  if (street) addressParts.push(street);
-  if (barangay) addressParts.push(barangay);
-  if (city) addressParts.push(city);
-  if (province) addressParts.push(province);
-  if (zipcode) addressParts.push(zipcode);
-
-  const formattedAddress = addressParts.length > 0 
-    ? addressParts.join(', ')
-    : 'N/A';
-    
-  document.getElementById('payment-customer-address').textContent = formattedAddress;
-  
-  // Set order details
-  const riceType = row.getAttribute('data-rice-type');
-  document.getElementById('payment-rice-type').textContent = riceType || 'N/A';
-  
-  const quantity = parseInt(row.getAttribute('data-quantity')) || 0;
-  document.getElementById('payment-quantity').textContent = quantity ? `${quantity} sacks` : 'N/A';
-  
-  const pricePerSack = quantity > 0 ? (totalAmount / quantity).toFixed(2) : '0.00';
-  document.getElementById('payment-price-per-sack').textContent = `₱${pricePerSack}`;
-  
-  // Set payment method
-  const paymentMethod = row.getAttribute('data-payment-method');
-  const methodDisplay = document.getElementById('payment-method-display');
-  methodDisplay.textContent = paymentMethod.toUpperCase();
-  document.getElementById('modal-payment-method').value = paymentMethod;
-  
-  // Set delivery info
-  const deliveryType = row.querySelector('td:nth-child(6) .delivery-badge').textContent.trim();
-  const deliveryBadge = document.getElementById('payment-delivery-type');
-  deliveryBadge.textContent = deliveryType;
-  deliveryBadge.className = `delivery-badge ${deliveryType.toLowerCase() === 'pickup' ? 'delivery-pickup' : 'delivery-delivery'}`;
-  
-  // Set receiver info (if available)
-  const receiverName = row.getAttribute('data-receiver-name');
-  const receiverContact = row.getAttribute('data-receiver-contact');
-  document.getElementById('payment-receiver-name').textContent = receiverName || 'Same as customer';
-  document.getElementById('payment-receiver-contact').textContent = receiverContact || customerContact || 'N/A';
-  
-  // Set payment amounts
-  document.getElementById('payment-subtotal').textContent = `₱${totalAmount.toFixed(2)}`;
-  const discount = row.getAttribute('data-discount') || '0.00';
-  document.getElementById('payment-discount').textContent = `₱${discount}`;
-  document.getElementById('payment-total').textContent = `₱${totalAmount.toFixed(2)}`;
-  document.getElementById('payment-to-pay').textContent = `₱${totalAmount.toFixed(2)}`;
-  
-  // Reset payment fields
-  document.getElementById('payment-amount').value = '';
-  document.getElementById('payment-tendered').textContent = '₱0.00';
-  document.getElementById('payment-change').textContent = '₱0.00';
-  document.getElementById('payment-notes').value = '';
-  
-  // Show modal
-  document.getElementById('payment-modal').classList.remove('hidden');
-  
-  // Focus on payment amount field
-  document.getElementById('payment-amount').focus();
-}
-
-function getPaymentBadgeClass(method) {
-  switch(method.toLowerCase()) {
-    case 'gcash':
-      return 'payment-badge-gcash';
-    case 'cash':
-      return 'payment-badge-cash';
-    case 'credit':
-      return 'payment-badge-credit';
-    default:
-      return '';
-  }
-}
-
-function calculateChange() {
-  const paymentAmount = parseFloat(document.getElementById('payment-amount').value) || 0;
-  const totalAmount = parseFloat(document.getElementById('payment-total').textContent.replace('₱', ''));
-  
-  // Update amount tendered
-  document.getElementById('payment-tendered').textContent = '₱' + paymentAmount.toFixed(2);
-  
-  // Calculate and display change
-  const change = Math.max(0, paymentAmount - totalAmount);
-  document.getElementById('payment-change').textContent = '₱' + change.toFixed(2);
-  
-  // Update submit button state
-  const submitButton = document.querySelector('button[form="payment-form"]');
-  if (paymentAmount >= totalAmount) {
-    submitButton.removeAttribute('disabled');
-    submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
-  } else {
-    submitButton.setAttribute('disabled', 'disabled');
-    submitButton.classList.add('opacity-50', 'cursor-not-allowed');
-  }
-}
-
-function closePaymentModal() {
-  document.getElementById('payment-modal').classList.add('hidden');
-  document.getElementById('payment-amount').value = '';
-  document.getElementById('payment-tendered').textContent = '₱0.00';
-  document.getElementById('payment-change').textContent = '₱0.00';
-}
-
-function validatePaymentAmount(input) {
-  let value = parseFloat(input.value);
-  if (isNaN(value) || value < 0) {
-    input.value = "";
-  } else {
-    input.value = value.toFixed(2);
-  }
-  calculateChange();
-}
-
-// Customer Selection Auto-fill
-document.addEventListener('DOMContentLoaded', function() {
+  // Customer autofill from dropdown
   const customerSelect = document.getElementById('customer_id');
   const receiverNameInput = document.querySelector('input[name="receiver_name"]');
   const receiverContactInput = document.querySelector('input[name="receiver_mobile_number"]');
 
   if (customerSelect) {
-    customerSelect.addEventListener('change', function() {
+    customerSelect.addEventListener('change', () => {
       const selected = customerSelect.options[customerSelect.selectedIndex];
-      
-      // Auto-fill customer information
       const fields = {
         'first_name': 'data-first-name',
         'middle_name': 'data-middle-name',
@@ -956,75 +839,168 @@ document.addEventListener('DOMContentLoaded', function() {
         'customer_mobile_number': 'data-customer-mobile'
       };
 
-      // Update each field with the corresponding data attribute
-      Object.entries(fields).forEach(([fieldName, dataAttr]) => {
-        const input = document.querySelector(`input[name="${fieldName}"]`);
-        if (input) {
-          input.value = selected.getAttribute(dataAttr) || '';
-        }
+      Object.entries(fields).forEach(([field, attr]) => {
+        const input = document.querySelector(`input[name="${field}"]`);
+        if (input) input.value = selected.getAttribute(attr) || '';
       });
 
-      // Clear receiver fields to allow new input
-      if (receiverNameInput) {
-        receiverNameInput.value = '';
-      }
-      if (receiverContactInput) {
-        receiverContactInput.value = '';
-      }
+      if (receiverNameInput) receiverNameInput.value = '';
+      if (receiverContactInput) receiverContactInput.value = '';
     });
 
-    // Check for new customer ID in URL and auto-select
-    const urlParams = new URLSearchParams(window.location.search);
-    const newCustomerId = urlParams.get('new_customer_id');
-    if (newCustomerId) {
-      customerSelect.value = newCustomerId;
-      // Trigger change event to populate fields
-      customerSelect.dispatchEvent(new Event('change'));
-    }
+    // Optional: Handle pre-filled customer from URL (cut off in your code)
+    // You can complete logic here to auto-select based on query param if needed
   }
 });
 
-// Handle Delivery Type and Receiver Information
-document.addEventListener('DOMContentLoaded', function() {
-  const deliveryTypeSelect = document.getElementById('delivery_type_bottom');
-  const receiverInfo = document.getElementById('receiver_info');
-  const receiverNameInput = document.getElementById('receiver_name');
-  const receiverMobileInput = document.getElementById('receiver_mobile_number');
+// Opens the payment modal with populated data
+function openPaymentModal(orderId, totalAmount) {
+  const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
+  if (!row) return;
 
-  // Function to toggle receiver info visibility
-  function toggleReceiverInfo() {
-    if (deliveryTypeSelect.value === 'delivery') {
-      receiverInfo.classList.remove('hidden');
-      receiverInfo.classList.add('animate-fadeIn');
-      // Don't auto-fill receiver fields, let user input them
-      receiverNameInput.value = '';
-      receiverMobileInput.value = '';
+  document.getElementById('payment-order-id').textContent = orderId;
+  document.getElementById('modal-order-id').value = orderId;
+  document.getElementById('payment-date').textContent = row.querySelector('td:nth-child(2)').textContent;
+
+  const customerName = row.querySelector('[data-customer-name]')?.getAttribute('data-customer-name') || 'N/A';
+  const customerContact = row.querySelector('td:nth-child(4)')?.textContent || 'N/A';
+  const customerEmail = row.getAttribute('data-customer-email') || 'N/A';
+
+  document.getElementById('payment-customer-name').textContent = customerName;
+  document.getElementById('payment-customer-contact').textContent = customerContact;
+  document.getElementById('payment-customer-email').textContent = customerEmail;
+
+  const addressParts = [
+    row.getAttribute('data-house-no'),
+    row.getAttribute('data-building'),
+    row.getAttribute('data-street'),
+    row.getAttribute('data-barangay'),
+    row.getAttribute('data-city'),
+    row.getAttribute('data-province'),
+    row.getAttribute('data-zipcode')
+  ].filter(Boolean);
+
+  document.getElementById('payment-customer-address').textContent = addressParts.length > 0
+    ? addressParts.join(', ')
+    : 'N/A';
+
+  const riceType = row.getAttribute('data-rice-type');
+  document.getElementById('payment-rice-type').textContent = riceType || 'N/A';
+
+  const quantity = parseInt(row.getAttribute('data-quantity')) || 0;
+  document.getElementById('payment-quantity').textContent = quantity ? `${quantity} sacks` : 'N/A';
+
+  const pricePerSack = quantity > 0 ? (totalAmount / quantity).toFixed(2) : '0.00';
+  document.getElementById('payment-price-per-sack').textContent = `₱${pricePerSack}`;
+
+  const paymentMethod = row.getAttribute('data-payment-method') || 'cash';
+  document.getElementById('modal-payment-method').value = paymentMethod;
+  document.getElementById('payment-method-display').textContent = paymentMethod.toUpperCase();
+
+  const deliveryType = row.querySelector('td:nth-child(6) .delivery-badge')?.textContent.trim();
+  const deliveryBadge = document.getElementById('payment-delivery-type');
+  deliveryBadge.textContent = deliveryType || 'N/A';
+  deliveryBadge.className = `delivery-badge ${deliveryType?.toLowerCase() === 'pickup' ? 'delivery-pickup' : 'delivery-delivery'}`;
+
+  document.getElementById('payment-receiver-name').textContent = row.getAttribute('data-receiver-name') || 'Same as customer';
+  document.getElementById('payment-receiver-contact').textContent = row.getAttribute('data-receiver-contact') || customerContact || 'N/A';
+
+  document.getElementById('payment-subtotal').textContent = `₱${totalAmount.toFixed(2)}`;
+  const discount = row.getAttribute('data-discount') || '0.00';
+  document.getElementById('payment-discount').textContent = `₱${discount}`;
+  document.getElementById('payment-total').textContent = `₱${totalAmount.toFixed(2)}`;
+  document.getElementById('payment-to-pay').textContent = `₱${totalAmount.toFixed(2)}`;
+
+  document.getElementById('payment-amount').value = '';
+  document.getElementById('payment-tendered').textContent = '₱0.00';
+  document.getElementById('payment-change').textContent = '₱0.00';
+  document.getElementById('payment-notes').value = '';
+
+  document.getElementById('payment-modal').classList.remove('hidden');
+  document.getElementById('payment-amount').focus();
+}
+
+function calculateChange() {
+  const paymentAmount = parseFloat(document.getElementById('payment-amount').value) || 0;
+  const totalAmount = parseFloat(document.getElementById('payment-total').textContent.replace('₱', ''));
+
+  document.getElementById('payment-tendered').textContent = `₱${paymentAmount.toFixed(2)}`;
+  const change = Math.max(0, paymentAmount - totalAmount);
+  document.getElementById('payment-change').textContent = `₱${change.toFixed(2)}`;
+
+  const submitButton = document.querySelector('button[form="payment-form"]');
+  if (submitButton) {
+    if (paymentAmount >= totalAmount) {
+      submitButton.removeAttribute('disabled');
+      submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
     } else {
-      receiverInfo.classList.add('hidden');
-      // Clear receiver fields when switching to pickup
-      receiverNameInput.value = '';
-      receiverMobileInput.value = '';
+      submitButton.setAttribute('disabled', 'disabled');
+      submitButton.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+  }
+}
+
+function closePaymentModal() {
+  document.getElementById('payment-modal').classList.add('hidden');
+  document.getElementById('payment-amount').value = '';
+  document.getElementById('payment-tendered').textContent = '₱0.00';
+  document.getElementById('payment-change').textContent = '₱0.00';
+}
+
+function validatePaymentAmount(input) {
+  let value = parseFloat(input.value);
+  if (isNaN(value) || value < 0) {
+    input.value = '';
+  } else {
+    input.value = value.toFixed(2);
+  }
+  calculateChange();
+}
+
+function getPaymentBadgeClass(method) {
+  switch (method.toLowerCase()) {
+    case 'gcash': return 'payment-badge-gcash';
+    case 'cash': return 'payment-badge-cash';
+    case 'credit': return 'payment-badge-credit';
+    default: return '';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const sidebar = document.getElementById('sidebar');
+  const mainContent = document.getElementById('mainContent');
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  let isSidebarVisible = true;
+
+  function toggleSidebar() {
+    if (isSidebarVisible) {
+      sidebar.style.transform = 'translateX(100%)';
+      mainContent.style.marginRight = '0';
+    } else {
+      sidebar.style.transform = 'translateX(0)';
+      mainContent.style.marginRight = '14rem';
+    }
+    isSidebarVisible = !isSidebarVisible;
+  }
+
+  sidebarToggle.addEventListener('click', toggleSidebar);
+
+  // Hide sidebar by default on smaller screens
+  function checkScreenSize() {
+    if (window.innerWidth < 1024) {
+      sidebar.style.transform = 'translateX(100%)';
+      mainContent.style.marginRight = '0';
+      isSidebarVisible = false;
+    } else {
+      sidebar.style.transform = 'translateX(0)';
+      mainContent.style.marginRight = '14rem';
+      isSidebarVisible = true;
     }
   }
 
-  // Initial state
-  toggleReceiverInfo();
-
-  // Listen for delivery type changes
-  deliveryTypeSelect.addEventListener('change', toggleReceiverInfo);
-
-  // Validate receiver mobile number
-  if (receiverMobileInput) {
-    receiverMobileInput.addEventListener('input', function() {
-      // Remove any non-numeric characters
-      this.value = this.value.replace(/[^0-9]/g, '');
-      
-      // Limit to 11 digits
-      if (this.value.length > 11) {
-        this.value = this.value.slice(0, 11);
-      }
-    });
-  }
+  // Check on load and resize
+  checkScreenSize();
+  window.addEventListener('resize', checkScreenSize);
 });
 </script>
 
@@ -1077,6 +1053,10 @@ document.addEventListener('DOMContentLoaded', function() {
                   <span class="text-gray-500">Contact:</span>
                   <span class="block font-medium text-gray-900" id="payment-customer-contact"></span>
                 </div>
+                <div>
+                  <span class="text-gray-500">Email:</span>
+                  <span class="block font-medium text-gray-900" id="payment-customer-email"></span>
+                </div>
               </div>
             </div>
           </div>
@@ -1102,7 +1082,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <div>
                   <span class="text-gray-500">Payment Method:</span>
-                  <span class="payment-badge payment-badge-method block mt-1 text-center" id="payment-method-display"></span>
+                  <div class="mt-1">
+                    <span class="payment-badge inline-flex items-center justify-center w-full py-1.5 text-sm font-medium rounded-lg" id="payment-method-display"></span>
+                  </div>
                 </div>
               </div>
             </div>

@@ -25,9 +25,25 @@
     .bold {
       font-weight: bold;
     }
+    @media print {
+      body {
+        border: none;
+      }
+    }
   </style>
+  <script>
+    window.onload = function() {
+      window.print();
+      // After printing, close the window if it was opened in a new window/tab
+      if (window.opener) {
+        setTimeout(function() {
+          window.close();
+        }, 1000);
+      }
+    };
+  </script>
 </head>
-<body onload="window.print()">
+<body>
   <h2>Dragon Ricemill</h2>
   <p class="bold">Invoice Number: {{ invoice_number }}</p>
   <p><strong>Reference Code:</strong> {{ order.reference_code|default:"N/A" }}</p>
@@ -46,5 +62,6 @@
   <p class="text-right"><strong>Change:</strong> ₱{{ order.amount_change|default:0|floatformat:2|intcomma }}</p>
   <hr />
   <p class="bold" style="text-align:center;">Thank you for your purchase!</p>
+  <p style="text-align:center; font-size: 0.8em;">{{ order.created_at|date:"F j, Y h:i A" }}</p>
 </body>
 </html>

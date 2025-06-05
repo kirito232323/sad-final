@@ -78,11 +78,14 @@ class UserAddress(models.Model):
     class Meta:
         db_table = 'user_address'
 
+from django.db import models
+
 class Users(models.Model):
     UserID = models.AutoField(primary_key=True)
     name = models.OneToOneField(UserName, on_delete=models.CASCADE, related_name='user', null=True, blank=True)
     address = models.OneToOneField(UserAddress, on_delete=models.CASCADE, related_name='user', null=True, blank=True)
     Customer_Mobile_Number = models.CharField(max_length=20, blank=True, null=True)
+    email = models.EmailField(max_length=254, blank=True, null=True)  # <-- Added field
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -92,6 +95,7 @@ class Users(models.Model):
     class Meta:
         db_table = 'webapp_users'
         managed = True
+
 
 from django.db import models
 
@@ -180,8 +184,8 @@ class CustomerOrder(models.Model):
     approval_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Approved')
     delivery_type = models.CharField(max_length=20, choices=DELIVERY_CHOICES)
     delivery_status = models.CharField(max_length=20, default='pending')
-    receiver_name = models.CharField(max_length=100)
-    receiver_mobile_number = models.CharField(max_length=20)
+    receiver_name = models.CharField(max_length=100, blank=True, null=True)
+    receiver_mobile_number = models.CharField(max_length=15, blank=True, null=True)
     delivery_address = models.TextField()
     reference_code = models.CharField(max_length=100, unique=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -204,6 +208,7 @@ class CustomerOrder(models.Model):
 
     order_notes = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
+    is_archived = models.BooleanField(default=False)
 
     
     def customer_name(self):

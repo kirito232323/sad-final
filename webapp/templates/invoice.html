@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Invoice - Dragon Ricemill</title>
+  <title>Create Invoice - Dragon Ricemill</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -133,7 +133,12 @@
 </head>
 <body class="bg-gray-50 text-gray-800 min-h-screen font-sans leading-relaxed overflow-x-hidden">
 
-<header class="fixed top-0 right-0 h-screen w-56 bg-white shadow-lg flex flex-col z-50 border-l border-gray-200">
+<!-- Toggle Sidebar Button -->
+<button id="sidebarToggle" class="fixed top-4 right-4 z-50 bg-white p-2 rounded-lg shadow-lg hover:bg-gray-100 lg:hidden">
+  <i class="fas fa-bars text-gray-600"></i>
+</button>
+
+<header id="sidebar" class="fixed top-0 right-0 h-screen w-56 bg-white shadow-lg flex flex-col z-40 border-l border-gray-200 transition-transform duration-300 ease-in-out lg:translate-x-0">
   <div class="h-14 flex items-center justify-center border-b border-gray-200">
     <a href="#" class="flex items-center space-x-2 select-none text-gray-900 font-bold text-lg tracking-wide">
       <span class="text-yellow-500 text-2xl">🌾</span>
@@ -142,6 +147,7 @@
   </div>
 
   <nav class="flex-1 flex flex-col py-1 pr-1 overflow-y-auto scrollbar-hide">
+    <!-- Main Navigation -->
     <div class="px-2 py-1">
       <span class="block text-1 text-gray-500 font-semibold mb-3">Welcome, {{ request.session.user_name }}!</span>
       <a href="{% url 'dashboard' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 font-semibold hover:text-yellow-600 transition">
@@ -152,267 +158,283 @@
       </a>
     </div>
 
+    {% if request.session.user_role == 'admin' %}
+    <!-- User Management Section -->
     <div class="mb-2 px-2">
-      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Users</p>
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">User Management</p>
+      <!-- Employee Management -->
       <a href="{% url 'add_user' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
         <i class="fas fa-user-plus w-4 text-yellow-500"></i><span>Add User</span>
       </a>
       <a href="{% url 'edituser' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
         <i class="fas fa-user-edit w-4 text-yellow-500"></i><span>Edit User</span>
       </a>
-      <a href="{% url 'user_account' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-user-circle w-4 text-yellow-500"></i><span>Customer</span>
-      </a>
-
-      
-  <!-- New Create Customer Ledger Link -->
-  <a href="{% url 'customer_ledger_create' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-    <i class="fas fa-book w-4 text-yellow-500"></i><span>Create Customer Ledger</span>
-  </a>
-
       <a href="{% url 'logs' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
         <i class="fas fa-file-alt w-4 text-yellow-500"></i><span>User Logs</span>
       </a>
-      <!-- Delete Customer link (no user_id, so go to selection page) -->
-      
+
+      <!-- Customer Management -->
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1 mt-4">Customer Management</p>
+      <a href="{% url 'user_account' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+        <i class="fas fa-users w-4 text-yellow-500"></i><span>Customers</span>
+      </a>
+      <a href="{% url 'add_customer' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-user-plus w-4 text-yellow-500"></i><span>Add Customer</span>
+      </a>
+      <a href="{% url 'customer_ledger_create' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-book w-4 text-yellow-500"></i><span>Create Customer Ledger</span>
+      </a>
     </div>
+    {% endif %}
 
-    
-
+    <!-- Orders & Transactions -->
     <div class="mb-2 px-2">
-      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Transaction</p>
-      <a href="{% url 'allorder_history' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-truck-moving w-4 text-yellow-500"></i><span>All Orders History</span>
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Orders & Transactions</p>
+      {% if request.session.user_role == 'admin' or request.session.user_role == 'cashier' %}
+      <a href="{% url 'new_sale' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+        <i class="fas fa-cart-plus w-4 text-yellow-500"></i><span>New Order</span>
+      </a>
+      {% endif %}
+      <a href="{% url 'allorder_history' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition {% if request.session.user_role == 'admin' or request.session.user_role == 'cashier' %}mt-1{% endif %}">
+        <i class="fas fa-history w-4 text-yellow-500"></i><span>All Orders History</span>
       </a>
       <a href="{% url 'payment_confirmation' 0 %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-truck-moving w-4 text-yellow-500"></i><span>Payment Confirmation</span>
+        <i class="fas fa-money-check w-4 text-yellow-500"></i><span>Payment Confirmation</span>
       </a>
       <a href="{% url 'delivery_confirmation' 0 %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-truck-moving w-4 text-yellow-500"></i><span>Delivery Confirmation</span>
+        <i class="fas fa-truck w-4 text-yellow-500"></i><span>Delivery Confirmation</span>
       </a>
     </div>
 
+    {% if request.session.user_role == 'admin' or request.session.user_role == 'employee' %}
+    <!-- Inventory Management -->
     <div class="mb-2 px-2">
       <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Inventory</p>
       <a href="{% url 'addstock' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
-        <i class="fas fa-boxes w-4 text-yellow-500"></i><span>Inventory</span>
+        <i class="fas fa-boxes w-4 text-yellow-500"></i><span>Manage Inventory</span>
       </a>
       <a href="{% url 'viewstocklevel' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-layer-group w-4 text-yellow-500"></i><span>View Levels</span>
+        <i class="fas fa-layer-group w-4 text-yellow-500"></i><span>View Stock Levels</span>
       </a>
     </div>
+    {% endif %}
 
-<div class="mb-2 px-2">
-  <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Sales</p>
-  <a href="{% url 'new_sale' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
-    <i class="fas fa-cart-plus w-4 text-yellow-500"></i><span>New Sale</span>
-  </a>
-  <a href="{% url 'invoice' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-    <i class="fas fa-file-invoice w-4 text-yellow-500"></i><span>Create Invoice</span>
-  </a>
-  
-  <a href="{% url 'view_sales_report' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-    <i class="fas fa-chart-line w-4 text-yellow-500"></i><span>Report</span>
-  </a>
-  <a href="{% url 'inventory_turnover' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-    <i class="fas fa-sync-alt w-4 text-yellow-500"></i><span>Inventory Turnover</span>
-  </a>
-</div>
+    {% if request.session.user_role == 'admin' or request.session.user_role == 'cashier' %}
+    <!-- Sales Management -->
+    <div class="mb-2 px-2">
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Sales</p>
+      <a href="{% url 'invoice' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm bg-yellow-50 text-yellow-600 transition">
+        <i class="fas fa-file-invoice w-4 text-yellow-500"></i><span>Create Invoice</span>
+      </a>
+      <a href="{% url 'view_sales_report' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-chart-line w-4 text-yellow-500"></i><span>Sales Report</span>
+      </a>
+      <a href="{% url 'inventory_turnover' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-sync-alt w-4 text-yellow-500"></i><span>Inventory Turnover</span>
+      </a>
+    </div>
+    {% endif %}
 
-
+    <!-- Logout -->
     <div class="border-t border-gray-200 mt-auto px-2 py-4">
       <a href="{% url 'logout' %}" onclick="return confirm('Logout?');" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-red-100 hover:text-red-600 transition font-semibold text-red-500 mt-2">
         <i class="fas fa-sign-out-alt w-4"></i><span>Logout</span>
       </a>
-    
     </div>
   </nav>
 </header>
 
-<main class="{% if not export_mode %}mr-64 p-8{% endif %}">
-  <div class="max-w-4xl mx-auto">
-    <div class="invoice-box">
-      <!-- Corner Decorations -->
-      <div class="corner-decoration corner-decoration-tl"></div>
-      <div class="corner-decoration corner-decoration-tr"></div>
-      <div class="corner-decoration corner-decoration-bl"></div>
-      <div class="corner-decoration corner-decoration-br"></div>
 
-      <!-- Watermark -->
-      <div class="invoice-watermark">INVOICE</div>
 
-      <!-- Invoice Content -->
-      <div class="invoice-content">
-        <div class="flex items-center justify-between mb-8">
-          <div class="flex items-center space-x-3">
-            <span class="text-yellow-500 text-3xl">🌾</span>
-            <div>
-              <h1 class="text-2xl font-bold text-gray-900">Invoice</h1>
-              <p class="text-sm text-gray-500">Dragon Ricemill</p>
-            </div>
-          </div>
-          <div class="text-right">
-            <p class="text-sm text-gray-600">Invoice Number:</p>
-            <p class="text-lg font-bold text-gray-900">#{{ invoice_number }}</p>
-            <p class="text-sm text-gray-500">{{ order.created_at|date:"F j, Y" }}</p>
-          </div>
-        </div>
+<!-- Push content so it's not behind the sidebar -->
+<div id="mainContent" class="lg:mr-56 min-h-screen bg-gray-50 transition-all duration-300">
+  <main class="max-w-7xl mx-auto px-6 py-8">
+    <!-- Page Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">Create Invoice</h1>
+      <p class="mt-2 text-sm text-gray-600">Generate and manage customer invoices</p>
+    </div>
 
-        <form id="invoiceForm" method="POST" class="space-y-6">
-          {% csrf_token %}
+    <div class="max-w-4xl mx-auto">
+      <div class="invoice-box">
+        <!-- Corner Decorations -->
+        <div class="corner-decoration corner-decoration-tl"></div>
+        <div class="corner-decoration corner-decoration-tr"></div>
+        <div class="corner-decoration corner-decoration-bl"></div>
+        <div class="corner-decoration corner-decoration-br"></div>
 
-          {% if not export_mode %}
-          <div class="field-group">
-            <form method="GET" action="{% url 'invoice' %}" class="mb-6">
-              <label class="field-label">Select Order</label>
-              <div class="relative">
-                <select name="order_id" class="field-select pl-10" onchange="this.form.submit()">
-                  <option value="">-- Select Order --</option>
-                  {% for o in orders %}
-                  <option value="{{ o.order_id }}" {% if order and o.order_id == order.order_id %}selected{% endif %}>
-                    Order #{{ o.order_id }} - {{ o.customer.name|default:"No Customer" }}
-                  </option>
-                  {% endfor %}
-                </select>
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <i class="fas fa-shopping-cart text-gray-400"></i>
-                </div>
-              </div>
-            </form>
-          </div>
-          {% endif %}
+        <!-- Watermark -->
+        <div class="invoice-watermark">INVOICE</div>
 
-          {% if order %}
-          <div class="details-section">
-            <div class="mb-6">
-              <h3 class="text-lg font-semibold text-gray-700 mb-4">Order Details</h3>
-              <div class="details-grid">
-                <div class="detail-item">
-                  <span class="field-label">Customer Name</span>
-                  <span class="field-value">{{ order.customer.name|default:"N/A" }}</span>
-                </div>
-                <div class="detail-item">
-                  <span class="field-label">Address</span>
-                  <span class="field-value">{{ order.customer.address|default:"N/A" }}</span>
-                </div>
-                <div class="detail-item">
-                  <span class="field-label">Rice Type</span>
-                  <span class="field-value">{{ order.rice_type.rice_type }}</span>
-                </div>
-                <div class="detail-item">
-                  <span class="field-label">Quantity</span>
-                  <span class="field-value">{{ order.quantity }} sack(s)</span>
-                </div>
-                <div class="detail-item">
-                  <span class="field-label">Cost Per Sack</span>
-                  <span class="field-value">₱{{ order.cost_per_sack|floatformat:2 }}</span>
-                </div>
-                <div class="detail-item">
-                  <span class="field-label">Discount</span>
-                  <span class="field-value">{{ order.discount }}%</span>
-                </div>
+        <!-- Invoice Content -->
+        <div class="invoice-content">
+          <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center space-x-3">
+              <span class="text-yellow-500 text-3xl">🌾</span>
+              <div>
+                <h1 class="text-2xl font-bold text-gray-900">Invoice</h1>
+                <p class="text-sm text-gray-500">Dragon Ricemill</p>
               </div>
             </div>
+            <div class="text-right">
+              <p class="text-sm text-gray-600">Invoice Number:</p>
+              <p class="text-lg font-bold text-gray-900">#{{ invoice_number }}</p>
+              <p class="text-sm text-gray-500">{{ order.created_at|date:"F j, Y" }}</p>
+            </div>
+          </div>
 
-            <div class="payment-info">
-              <h3 class="text-lg font-semibold text-gray-700 mb-4">Payment Information</h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p class="field-label">Payment Method</p>
-                  <p class="field-value">{{ order.payment_method|capfirst }}</p>
+          <form id="invoiceForm" method="POST" class="space-y-6">
+            {% csrf_token %}
+
+            {% if not export_mode %}
+            <div class="field-group">
+              <form method="GET" action="{% url 'invoice' %}" class="mb-6">
+                <label class="field-label">Select Order</label>
+                <div class="relative">
+                  <select name="order_id" class="field-select pl-10" onchange="this.form.submit()">
+                    <option value="">-- Select Order --</option>
+                    {% for o in orders %}
+                    <option value="{{ o.order_id }}" {% if order and o.order_id == order.order_id %}selected{% endif %}>
+                      Order #{{ o.order_id }} - {{ o.customer.name|default:"No Customer" }}
+                    </option>
+                    {% endfor %}
+                  </select>
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="fas fa-shopping-cart text-gray-400"></i>
+                  </div>
+                </div>
+              </form>
+            </div>
+            {% endif %}
+
+            {% if order %}
+            <div class="details-section">
+              <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">Order Details</h3>
+                <div class="details-grid">
+                  <div class="detail-item">
+                    <span class="field-label">Customer Name</span>
+                    <span class="field-value">{{ order.customer.name|default:"N/A" }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="field-label">Address</span>
+                    <span class="field-value">{{ order.customer.address|default:"N/A" }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="field-label">Rice Type</span>
+                    <span class="field-value">{{ order.rice_type.rice_type }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="field-label">Quantity</span>
+                    <span class="field-value">{{ order.quantity }} sack(s)</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="field-label">Cost Per Sack</span>
+                    <span class="field-value">₱{{ order.cost_per_sack|floatformat:2 }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="field-label">Discount</span>
+                    <span class="field-value">{{ order.discount }}%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="payment-info">
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">Payment Information</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p class="field-label">Payment Method</p>
+                    <p class="field-value">{{ order.payment_method|capfirst }}</p>
+                    
+                    {% if order.payment_method in 'gcash credit_card' and order.reference_code %}
+                    <p class="mt-2">
+                      <span class="field-label">Reference Number</span>
+                      <span class="field-value text-blue-700">{{ order.reference_code }}</span>
+                    </p>
+                    {% endif %}
+                  </div>
                   
-                  {% if order.payment_method in 'gcash credit_card' and order.reference_code %}
-                  <p class="mt-2">
-                    <span class="field-label">Reference Number</span>
-                    <span class="field-value text-blue-700">{{ order.reference_code }}</span>
-                  </p>
-                  {% endif %}
-                </div>
-                
-                <div class="space-y-2">
-                  <div class="flex justify-between items-center py-2 border-b border-gray-200">
-                    <span class="field-label">Total Cost:</span>
-                    <span class="text-lg font-bold text-gray-900">₱{{ order.total_cost|floatformat:2|intcomma }}</span>
-                  </div>
-                  <div class="flex justify-between items-center py-2">
-                    <span class="field-label">Amount Paid:</span>
-                    <span class="field-value">₱{{ order.amount_paid|floatformat:2 }}</span>
-                  </div>
-                  <div class="flex justify-between items-center py-2 border-t border-gray-200">
-                    <span class="field-label">Change:</span>
-                    <span class="field-value">₱{{ order.amount_change|floatformat:2 }}</span>
+                  <div class="space-y-2">
+                    <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                      <span class="field-label">Total Cost:</span>
+                      <span class="text-lg font-bold text-gray-900">₱{{ order.total_cost|floatformat:2|intcomma }}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2">
+                      <span class="field-label">Amount Paid:</span>
+                      <span class="field-value">₱{{ order.amount_paid|floatformat:2 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-t border-gray-200">
+                      <span class="field-label">Change:</span>
+                      <span class="field-value">₱{{ order.amount_change|floatformat:2 }}</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div class="flex justify-end space-x-4 mt-8">
-            <form method="POST" action="{% url 'invoice' %}" target="_blank" class="inline">
-              {% csrf_token %}
-              <input type="hidden" name="order_id" value="{{ order.order_id }}">
-              <button type="submit" name="export_pdf" value="true" class="btn btn-secondary">
-                <i class="fas fa-file-pdf mr-2"></i>Export PDF
-              </button>
-            </form>
+            <div class="flex justify-end space-x-4 mt-8">
+              <form method="POST" action="{% url 'invoice' %}" target="_blank" class="inline">
+                {% csrf_token %}
+                <input type="hidden" name="order_id" value="{{ order.order_id }}">
+                <button type="submit" name="export_pdf" value="true" class="btn btn-secondary">
+                  <i class="fas fa-file-pdf mr-2"></i>Export PDF
+                </button>
+              </form>
 
-            <a href="{% url 'invoice' %}?order_id={{ order.order_id }}" 
-               target="_blank" 
-               class="btn btn-primary">
-              <i class="fas fa-print mr-2"></i>Print Invoice
-            </a>
-          </div>
-          {% endif %}
-        </form>
+             <form method="POST" action="{% url 'send_invoice' %}" target="_blank" class="inline">
+  {% csrf_token %}
+  <input type="hidden" name="order_id" value="{{ order.order_id }}">
+  <button type="submit" class="btn btn-primary">
+    <i class="fas fa-print mr-2"></i>Print & Email Invoice
+  </button>
+</form>
+            </div>
+            {% endif %}
+          </form>
+        </div>
       </div>
     </div>
-  </div>
-</main>
-
-
-<!--
-  Hidden printable invoice markup:
-  This markup is what you want to print and can be opened in a separate window or via a dedicated print view.
-  Alternatively, you can generate this markup on the server in a separate URL/view (e.g., your 'invoice' url).
--->
-
-{% comment %}
-If you want to embed the print HTML on the page (for JS printing) you could do this:
-
-<div id="printable-invoice" style="display:none; max-width:300px; margin:auto; padding:10px; border:1px solid #000; font-family: monospace;">
-  <h2>Dragon Ricemill</h2>
-  <p class="bold">Invoice Number: {{ invoice_number }}</p>
-  <hr />
-  <p><strong>Customer:</strong> {{ order.customer.name|default:"N/A" }}</p>
-  <p><strong>Address:</strong> {{ order.customer.address|default:"N/A" }}</p>
-  <hr />
-  <p><strong>Rice Type:</strong> {{ order.rice_type.rice_type }}</p>
-  <p><strong>Quantity:</strong> {{ order.quantity }} sack(s)</p>
-  <p><strong>Cost Per Sack:</strong> ₱{{ order.cost_per_sack|floatformat:2 }}</p>
-  <hr />
-  <p style="text-align:right;"><strong>Total Cost:</strong> ₱{{ order.total_cost|floatformat:2 }}</p>
-  <p style="text-align:right;"><strong>Payment Method:</strong> {{ order.payment_method }}</p>
-  <p style="text-align:right;"><strong>Amount Paid:</strong> ₱{{ order.amount_paid|floatformat:2 }}</p>
-  <p style="text-align:right;"><strong>Change:</strong> ₱{{ order.amount_change|floatformat:2 }}</p>
-  <hr />
-  <p style="text-align:center; font-weight:bold;">Thank you for your purchase!</p>
+  </main>
 </div>
 
-Then you can add a "Print" button with JS:
-
-<button onclick="printInvoice()">Print Invoice</button>
-
 <script>
-  function printInvoice() {
-    const printContents = document.getElementById('printable-invoice').innerHTML;
-    const printWindow = window.open('', '_blank', 'width=400,height=600');
-    printWindow.document.write('<html><head><title>Invoice {{ invoice_number }}</title></head><body onload="window.print()">' + printContents + '</body></html>');
-    printWindow.document.close();
-  }
-</script>
-{% endcomment %}
+document.addEventListener('DOMContentLoaded', function() {
+  const sidebar = document.getElementById('sidebar');
+  const mainContent = document.getElementById('mainContent');
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  let isSidebarVisible = true;
 
-    </div>
-  </main>
+  function toggleSidebar() {
+    if (isSidebarVisible) {
+      sidebar.style.transform = 'translateX(100%)';
+      mainContent.style.marginRight = '0';
+    } else {
+      sidebar.style.transform = 'translateX(0)';
+      mainContent.style.marginRight = '14rem';
+    }
+    isSidebarVisible = !isSidebarVisible;
+  }
+
+  sidebarToggle.addEventListener('click', toggleSidebar);
+
+  // Hide sidebar by default on smaller screens
+  function checkScreenSize() {
+    if (window.innerWidth < 1024) {
+      sidebar.style.transform = 'translateX(100%)';
+      mainContent.style.marginRight = '0';
+      isSidebarVisible = false;
+    } else {
+      sidebar.style.transform = 'translateX(0)';
+      mainContent.style.marginRight = '14rem';
+      isSidebarVisible = true;
+    }
+  }
+
+  // Check on load and resize
+  checkScreenSize();
+  window.addEventListener('resize', checkScreenSize);
+});
+</script>
+
 </body>
 </html>

@@ -7,7 +7,11 @@
   <title>Delivery Confirmation - Dragon Ricemill</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
     html { scroll-behavior: smooth; }
     .dropdown:hover .dropdown-menu {
       opacity: 1;
@@ -93,9 +97,14 @@
     }
   </style>
 </head>
-<body class="bg-gray-100 text-gray-800 min-h-screen font-sans leading-relaxed overflow-x-hidden">
+<body class="bg-gray-50 text-gray-800 min-h-screen font-sans leading-relaxed overflow-x-hidden">
 
-<header class="fixed top-0 right-0 h-screen w-56 bg-white shadow-lg flex flex-col z-50 border-l border-gray-200">
+<!-- Toggle Sidebar Button -->
+<button id="sidebarToggle" class="fixed top-4 right-4 z-50 bg-white p-2 rounded-lg shadow-lg hover:bg-gray-100 lg:hidden">
+  <i class="fas fa-bars text-gray-600"></i>
+</button>
+
+<header id="sidebar" class="fixed top-0 right-0 h-screen w-56 bg-white shadow-lg flex flex-col z-40 border-l border-gray-200 transition-transform duration-300 ease-in-out lg:translate-x-0">
   <div class="h-14 flex items-center justify-center border-b border-gray-200">
     <a href="#" class="flex items-center space-x-2 select-none text-gray-900 font-bold text-lg tracking-wide">
       <span class="text-yellow-500 text-2xl">🌾</span>
@@ -104,6 +113,7 @@
   </div>
 
   <nav class="flex-1 flex flex-col py-1 pr-1 overflow-y-auto scrollbar-hide">
+    <!-- Main Navigation -->
     <div class="px-2 py-1">
       <span class="block text-1 text-gray-500 font-semibold mb-3">Welcome, {{ request.session.user_name }}!</span>
       <a href="{% url 'dashboard' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 font-semibold hover:text-yellow-600 transition">
@@ -113,96 +123,95 @@
         <i class="fas fa-user-circle w-4 text-yellow-500"></i><span>Profile</span>
       </a>
     </div>
-    
 
     {% if request.session.user_role == 'admin' %}
+    <!-- User Management Section -->
     <div class="mb-2 px-2">
-      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Users</p>
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">User Management</p>
+      <!-- Employee Management -->
       <a href="{% url 'add_user' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
         <i class="fas fa-user-plus w-4 text-yellow-500"></i><span>Add User</span>
       </a>
       <a href="{% url 'edituser' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
         <i class="fas fa-user-edit w-4 text-yellow-500"></i><span>Edit User</span>
       </a>
-      <a href="{% url 'user_account' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-user-circle w-4 text-yellow-500"></i><span>Customer</span>
-      </a>
-
-      
-
-      
-  <!-- New Create Customer Ledger Link -->
-  <a href="{% url 'customer_ledger_create' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-    <i class="fas fa-book w-4 text-yellow-500"></i><span>Create Customer Ledger</span>
-  </a>
-
       <a href="{% url 'logs' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
         <i class="fas fa-file-alt w-4 text-yellow-500"></i><span>User Logs</span>
       </a>
-      <!-- Delete Customer link (no user_id, so go to selection page) -->
-      
-    </div>
-{% endif %}
-    
 
+      <!-- Customer Management -->
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1 mt-4">Customer Management</p>
+      <a href="{% url 'user_account' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+        <i class="fas fa-users w-4 text-yellow-500"></i><span>Customers</span>
+      </a>
+      <a href="{% url 'add_customer' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-user-plus w-4 text-yellow-500"></i><span>Add Customer</span>
+      </a>
+      <a href="{% url 'customer_ledger_create' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-book w-4 text-yellow-500"></i><span>Create Customer Ledger</span>
+      </a>
+    </div>
+    {% endif %}
+
+    <!-- Orders & Transactions -->
     <div class="mb-2 px-2">
-      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Transaction</p>
-      <a href="{% url 'allorder_history' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-truck-moving w-4 text-yellow-500"></i><span>All Orders History</span>
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Orders & Transactions</p>
+      {% if request.session.user_role == 'admin' or request.session.user_role == 'cashier' %}
+      <a href="{% url 'new_sale' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+        <i class="fas fa-cart-plus w-4 text-yellow-500"></i><span>New Order</span>
+      </a>
+      {% endif %}
+      <a href="{% url 'allorder_history' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition {% if request.session.user_role == 'admin' or request.session.user_role == 'cashier' %}mt-1{% endif %}">
+        <i class="fas fa-history w-4 text-yellow-500"></i><span>All Orders History</span>
       </a>
       <a href="{% url 'payment_confirmation' 0 %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-truck-moving w-4 text-yellow-500"></i><span>Payment Confirmation</span>
+        <i class="fas fa-money-check w-4 text-yellow-500"></i><span>Payment Confirmation</span>
       </a>
-      <a href="{% url 'delivery_confirmation' 0 %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-truck-moving w-4 text-yellow-500"></i><span>Delivery Confirmation</span>
+      <a href="{% url 'delivery_confirmation' 0 %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm bg-yellow-50 text-yellow-600 transition mt-1">
+        <i class="fas fa-truck w-4 text-yellow-500"></i><span>Delivery Confirmation</span>
       </a>
     </div>
 
-    
     {% if request.session.user_role == 'admin' or request.session.user_role == 'employee' %}
+    <!-- Inventory Management -->
     <div class="mb-2 px-2">
       <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Inventory</p>
       <a href="{% url 'addstock' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
-        <i class="fas fa-boxes w-4 text-yellow-500"></i><span>Inventory</span>
+        <i class="fas fa-boxes w-4 text-yellow-500"></i><span>Manage Inventory</span>
       </a>
       <a href="{% url 'viewstocklevel' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-        <i class="fas fa-layer-group w-4 text-yellow-500"></i><span>View Levels</span>
+        <i class="fas fa-layer-group w-4 text-yellow-500"></i><span>View Stock Levels</span>
       </a>
     </div>
     {% endif %}
 
     {% if request.session.user_role == 'admin' or request.session.user_role == 'cashier' %}
+    <!-- Sales Management -->
+    <div class="mb-2 px-2">
+      <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Sales</p>
+      <a href="{% url 'invoice' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+        <i class="fas fa-file-invoice w-4 text-yellow-500"></i><span>Create Invoice</span>
+      </a>
+      <a href="{% url 'view_sales_report' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-chart-line w-4 text-yellow-500"></i><span>Sales Report</span>
+      </a>
+      <a href="{% url 'inventory_turnover' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+        <i class="fas fa-sync-alt w-4 text-yellow-500"></i><span>Inventory Turnover</span>
+      </a>
+    </div>
+    {% endif %}
 
-<div class="mb-2 px-2">
-  <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Sales</p>
-  <a href="{% url 'new_sale' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
-    <i class="fas fa-cart-plus w-4 text-yellow-500"></i><span>New Sale</span>
-  </a>
-  <a href="{% url 'invoice' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-    <i class="fas fa-file-invoice w-4 text-yellow-500"></i><span>Create Invoice</span>
-  </a>
-  
-  <a href="{% url 'view_sales_report' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-    <i class="fas fa-chart-line w-4 text-yellow-500"></i><span>Report</span>
-  </a>
-  <a href="{% url 'inventory_turnover' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
-    <i class="fas fa-sync-alt w-4 text-yellow-500"></i><span>Inventory Turnover</span>
-  </a>
-</div>
-  {% endif %}
-
-
-
+    <!-- Logout -->
     <div class="border-t border-gray-200 mt-auto px-2 py-4">
       <a href="{% url 'logout' %}" onclick="return confirm('Logout?');" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-red-100 hover:text-red-600 transition font-semibold text-red-500 mt-2">
         <i class="fas fa-sign-out-alt w-4"></i><span>Logout</span>
       </a>
-    
     </div>
   </nav>
 </header>
 
-<main class="mr-64 p-8">
+<!-- Push content so it's not behind the sidebar -->
+<div id="mainContent" class="lg:mr-56 min-h-screen bg-gray-50 transition-all duration-300">
   <div class="max-w-5xl mx-auto">
     <div class="mb-8">
       <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-3">
@@ -237,50 +246,54 @@
       </div>
     {% endif %}
 
-      <div class="bg-white rounded-xl p-6 card-shadow hover-scale">
+      <!-- Pending Deliveries -->
+      <div class="bg-white rounded-lg p-4 card-shadow hover-scale">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600">Pending Deliveries</p>
-            <h3 class="text-2xl font-bold text-yellow-600 mt-1">{{ pending_count|default:0 }}</h3>
+            <p class="text-xs font-medium text-gray-600">Pending</p>
+            <h3 class="text-xl font-bold text-yellow-600 mt-0.5">{{ pending_count|default:0 }}</h3>
           </div>
-          <div class="bg-yellow-100 p-3 rounded-lg">
-            <i class="fas fa-clock text-yellow-600"></i>
+          <div class="bg-yellow-100 p-2 rounded-lg">
+            <i class="fas fa-clock text-yellow-600 text-sm"></i>
           </div>
         </div>
       </div>
 
-      <div class="bg-white rounded-xl p-6 card-shadow hover-scale">
+      <!-- Today's Deliveries -->
+      <div class="bg-white rounded-lg p-4 card-shadow hover-scale">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600">Today's Deliveries</p>
-            <h3 class="text-2xl font-bold text-blue-600 mt-1">{{ today_count|default:0 }}</h3>
+            <p class="text-xs font-medium text-gray-600">Today</p>
+            <h3 class="text-xl font-bold text-blue-600 mt-0.5">{{ today_count|default:0 }}</h3>
           </div>
-          <div class="bg-blue-100 p-3 rounded-lg">
-            <i class="fas fa-calendar-day text-blue-600"></i>
+          <div class="bg-blue-100 p-2 rounded-lg">
+            <i class="fas fa-calendar-day text-blue-600 text-sm"></i>
           </div>
         </div>
       </div>
 
-      <div class="bg-white rounded-xl p-6 card-shadow hover-scale">
+      <!-- Completed -->
+      <div class="bg-white rounded-lg p-4 card-shadow hover-scale">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600">Completed</p>
-            <h3 class="text-2xl font-bold text-green-600 mt-1">{{ completed_count|default:0 }}</h3>
+            <p class="text-xs font-medium text-gray-600">Completed</p>
+            <h3 class="text-xl font-bold text-green-600 mt-0.5">{{ completed_count|default:0 }}</h3>
           </div>
-          <div class="bg-green-100 p-3 rounded-lg">
-            <i class="fas fa-check-circle text-green-600"></i>
+          <div class="bg-green-100 p-2 rounded-lg">
+            <i class="fas fa-check-circle text-green-600 text-sm"></i>
           </div>
         </div>
       </div>
 
-      <div class="bg-white rounded-xl p-6 card-shadow hover-scale">
+      <!-- Total Value -->
+      <div class="bg-white rounded-lg p-4 card-shadow hover-scale">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600">Total Value</p>
-            <h3 class="text-2xl font-bold text-purple-600 mt-1">₱{{ total_value|default:0|floatformat:2|intcomma }}</h3>
+            <p class="text-xs font-medium text-gray-600">Value</p>
+            <h3 class="text-xl font-bold text-purple-600 mt-0.5">₱{{ total_value|default:0|floatformat:2|intcomma }}</h3>
           </div>
-          <div class="bg-purple-100 p-3 rounded-lg">
-            <i class="fas fa-money-bill-wave text-purple-600"></i>
+          <div class="bg-purple-100 p-2 rounded-lg">
+            <i class="fas fa-money-bill-wave text-purple-600 text-sm"></i>
           </div>
         </div>
       </div>
@@ -288,13 +301,6 @@
 
     <!-- Filters Section -->
     <div class="bg-white rounded-xl shadow-md mb-8">
-      <div class="p-6 border-b border-gray-200">
-        <div class="flex items-center gap-2">
-          <i class="fas fa-filter text-yellow-500"></i>
-          <h2 class="text-lg font-semibold">Search & Filters</h2>
-        </div>
-      </div>
-      
       <div class="p-6">
         <form id="delivery-filters" method="get" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <!-- Search Field -->
@@ -306,7 +312,8 @@
                      id="search" 
                      class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all text-sm" 
                      placeholder="Enter Order ID or name..."
-                     value="{{ request.GET.search }}">
+                     value="{{ request.GET.search }}"
+                     oninput="submitForm()">
               <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
             </div>
           </div>
@@ -317,7 +324,8 @@
             <div class="relative">
               <select name="payment_method" 
                       id="payment_method" 
-                      class="w-full py-2.5 pl-4 pr-10 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all appearance-none text-sm">
+                      class="w-full py-2.5 pl-4 pr-10 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all appearance-none text-sm"
+                      onchange="submitForm()">
                 <option value="">All Payment Methods</option>
                 <option value="cash" {% if request.GET.payment_method == 'cash' %}selected{% endif %}>Cash</option>
                 <option value="gcash" {% if request.GET.payment_method == 'gcash' %}selected{% endif %}>GCash</option>
@@ -333,7 +341,8 @@
             <div class="relative">
               <select name="delivery_type" 
                       id="delivery_type" 
-                      class="w-full py-2.5 pl-4 pr-10 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all appearance-none text-sm">
+                      class="w-full py-2.5 pl-4 pr-10 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all appearance-none text-sm"
+                      onchange="submitForm()">
                 <option value="">All Types</option>
                 <option value="pickup" {% if request.GET.delivery_type == 'pickup' %}selected{% endif %}>Pickup</option>
                 <option value="delivery" {% if request.GET.delivery_type == 'delivery' %}selected{% endif %}>Delivery</option>
@@ -351,25 +360,18 @@
                        name="start_date" 
                        id="start_date" 
                        class="w-full py-2.5 px-4 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all text-sm"
-                       value="{{ request.GET.start_date }}">
+                       value="{{ request.GET.start_date }}"
+                       onchange="submitForm()">
               </div>
               <div class="relative">
                 <input type="date" 
                        name="end_date" 
                        id="end_date" 
                        class="w-full py-2.5 px-4 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all text-sm"
-                       value="{{ request.GET.end_date }}">
+                       value="{{ request.GET.end_date }}"
+                       onchange="submitForm()">
               </div>
             </div>
-          </div>
-
-          <!-- Filter Button -->
-          <div class="lg:col-span-4 flex justify-end">
-            <button type="submit" 
-                    class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-all duration-200 flex items-center gap-2 text-sm font-medium shadow-sm hover:shadow">
-              <i class="fas fa-filter"></i>
-              <span>Apply Filters</span>
-            </button>
           </div>
         </form>
       </div>
@@ -393,15 +395,16 @@
         <table class="min-w-full table-fixed">
           <thead class="bg-gray-50">
             <tr>
-              <th class="w-1/12 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
-              <th class="w-1/12 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-              <th class="w-2/12 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-              <th class="w-1/12 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Receiver</th>
-              <th class="w-1/12 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
-              <th class="w-1/12 px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">Payment</th>
-              <th class="w-1/12 px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
-              <th class="w-1/12 px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th class="w-2/12 px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
+              <th class="w-[7%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
+              <th class="w-[8%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+              <th class="w-[10%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+              <th class="w-[8%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Receiver</th>
+              <th class="w-[8%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
+              <th class="w-[35%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Delivery Address</th>
+              <th class="w-[6%] px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">Payment</th>
+              <th class="w-[8%] px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
+              <th class="w-[5%] px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
+              <th class="w-[5%] px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
@@ -410,22 +413,56 @@
                 <td class="px-3 py-4 text-sm text-gray-900">#{{ order.order_id }}</td>
                 <td class="px-3 py-4 text-sm text-gray-500">{{ order.created_at|date:"M d, Y" }}</td>
                 <td class="px-3 py-4 text-sm text-gray-900">
-                  {% if order.customer %}
+                  {% if order.customer and order.customer.name %}
                     {{ order.customer.name.first_name }} {{ order.customer.name.last_name }}
                   {% else %}
                     N/A
                   {% endif %}
                 </td>
                 <td class="px-3 py-4 text-sm text-gray-900">
-                  {{ order.receiver_name|default:"Same as customer" }}
+                  {% if order.receiver_name and order.receiver_name != '' %}
+                    {{ order.receiver_name }}
+                  {% else %}
+                    <span class="text-gray-500">Same as customer</span>
+                  {% endif %}
                 </td>
                 <td class="px-3 py-4 text-sm text-gray-500">
-                  {% if order.receiver_mobile_number %}
+                  {% if order.receiver_mobile_number and order.receiver_mobile_number != '' %}
                     {{ order.receiver_mobile_number }}
-                  {% elif order.customer and order.customer.contact_number %}
-                    {{ order.customer.contact_number }}
+                  {% elif order.customer.Customer_Mobile_Number %}
+                    <span class="text-gray-500">{{ order.customer.Customer_Mobile_Number }}</span>
                   {% else %}
-                    N/A
+                    <span class="text-gray-500">N/A</span>
+                  {% endif %}
+                </td>
+                <td class="px-3 py-4">
+                  {% if order.delivery_type == 'delivery' %}
+                    {% with address=order.customer.address %}
+                      <div class="max-w-md">
+                        <div class="text-sm space-y-1">
+                          {% if address.house_unit_number or address.building_name or address.street_name %}
+                          <p class="font-medium text-gray-900 leading-snug">
+                            {% if address.house_unit_number %}{{ address.house_unit_number }}{% endif %}
+                            {% if address.building_name %}{% if address.house_unit_number %}, {% endif %}{{ address.building_name }}{% endif %}
+                            {% if address.street_name %}{% if address.house_unit_number or address.building_name %}, {% endif %}{{ address.street_name }}{% endif %}
+                          </p>
+                          {% endif %}
+                          
+                          {% if address.barangay or address.city_municipality or address.province %}
+                          <p class="text-gray-600 leading-snug">
+                            {% if address.barangay %}{{ address.barangay }}{% endif %}
+                            {% if address.city_municipality %}{% if address.barangay %}, {% endif %}{{ address.city_municipality }}{% endif %}
+                            {% if address.province %}{% if address.barangay or address.city_municipality %}, {% endif %}{{ address.province }}{% endif %}
+                            {% if address.zip_code %} {{ address.zip_code }}{% endif %}
+                          </p>
+                          {% endif %}
+                        </div>
+                      </div>
+                    {% endwith %}
+                  {% else %}
+                    <span class="inline-flex items-center px-2.5 py-1.5 rounded-md text-sm font-medium bg-yellow-50 text-yellow-800">
+                      <i class="fas fa-store-alt mr-1.5"></i> Pickup
+                    </span>
                   {% endif %}
                 </td>
                 <td class="px-3 py-4 text-center">
@@ -472,7 +509,7 @@
               </tr>
             {% empty %}
               <tr>
-                <td colspan="9" class="px-6 py-10 text-center">
+                <td colspan="10" class="px-6 py-10 text-center">
                   <div class="flex flex-col items-center">
                     <i class="fas fa-truck text-4xl text-gray-400 mb-3"></i>
                     <p class="text-lg font-medium">No orders ready for delivery</p>
@@ -490,7 +527,7 @@
     {% if orders.has_other_pages %}
       <div class="mt-6 flex justify-center items-center space-x-4">
         {% if orders.has_previous %}
-          <a href="?page={{ orders.previous_page_number }}" 
+          <a href="?page={{ orders.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.payment_method %}&payment_method={{ request.GET.payment_method }}{% endif %}{% if request.GET.delivery_type %}&delivery_type={{ request.GET.delivery_type }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}" 
              class="flex items-center px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
             <i class="fas fa-chevron-left mr-2"></i>
             Previous
@@ -502,7 +539,7 @@
         </span>
 
         {% if orders.has_next %}
-          <a href="?page={{ orders.next_page_number }}" 
+          <a href="?page={{ orders.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.payment_method %}&payment_method={{ request.GET.payment_method }}{% endif %}{% if request.GET.delivery_type %}&delivery_type={{ request.GET.delivery_type }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}" 
              class="flex items-center px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
             Next
             <i class="fas fa-chevron-right ml-2"></i>
@@ -511,9 +548,19 @@
       </div>
     {% endif %}
   </div>
-</main>
+</div>
 
 <script>
+// Add this at the beginning of your script section
+let filterTimeout;
+
+function submitForm() {
+    clearTimeout(filterTimeout);
+    filterTimeout = setTimeout(() => {
+        document.getElementById('delivery-filters').submit();
+    }, 500); // Wait for 500ms after the last change before submitting
+}
+
 // Auto-hide success messages
 document.addEventListener('DOMContentLoaded', function() {
   // Auto-hide success messages after 5 seconds
@@ -539,6 +586,43 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  const sidebar = document.getElementById('sidebar');
+  const mainContent = document.getElementById('mainContent');
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  let isSidebarVisible = true;
+
+  function toggleSidebar() {
+    if (isSidebarVisible) {
+      sidebar.style.transform = 'translateX(100%)';
+      mainContent.style.marginRight = '0';
+    } else {
+      sidebar.style.transform = 'translateX(0)';
+      mainContent.style.marginRight = '14rem';
+    }
+    isSidebarVisible = !isSidebarVisible;
+  }
+
+  sidebarToggle.addEventListener('click', toggleSidebar);
+
+  // Hide sidebar by default on smaller screens
+  function checkScreenSize() {
+    if (window.innerWidth < 1024) {
+      sidebar.style.transform = 'translateX(100%)';
+      mainContent.style.marginRight = '0';
+      isSidebarVisible = false;
+    } else {
+      sidebar.style.transform = 'translateX(0)';
+      mainContent.style.marginRight = '14rem';
+      isSidebarVisible = true;
+    }
+  }
+
+  // Check on load and resize
+  checkScreenSize();
+  window.addEventListener('resize', checkScreenSize);
 });
 </script>
 
