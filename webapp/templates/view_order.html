@@ -154,6 +154,7 @@
                     Generate Invoice
                 </a>
                 {% endif %}
+
                 {% if order.approval_status == 'pending' %}
                 <a href="{% url 'payment_confirmation' order.order_id %}" 
                    class="inline-flex items-center px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors">

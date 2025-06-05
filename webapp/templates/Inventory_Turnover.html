@@ -1,0 +1,698 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Turnover Report - Dragon Ricemill</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        html { scroll-behavior: smooth; }
+        .dropdown:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen font-sans leading-relaxed overflow-x-hidden">
+
+<!-- Toggle Sidebar Button -->
+<button id="sidebarToggle" class="fixed top-4 right-4 z-50 bg-white p-2 rounded-lg shadow-lg hover:bg-gray-100 lg:hidden">
+    <i class="fas fa-bars text-gray-600"></i>
+</button>
+
+<header id="sidebar" class="fixed top-0 right-0 h-screen w-56 bg-white shadow-lg flex flex-col z-40 border-l border-gray-200 transition-transform duration-300 ease-in-out lg:translate-x-0">
+    <div class="h-14 flex items-center justify-center border-b border-gray-200">
+        <a href="#" class="flex items-center space-x-2 select-none text-gray-900 font-bold text-lg tracking-wide">
+            <span class="text-yellow-500 text-2xl">🌾</span>
+            <span>Dragon Ricemill</span>
+        </a>
+    </div>
+
+    <nav class="flex-1 flex flex-col py-1 pr-1 overflow-y-auto scrollbar-hide">
+        <!-- Main Navigation -->
+        <div class="px-2 py-1">
+            <span class="block text-1 text-gray-500 font-semibold mb-3">Welcome, {{ request.session.user_name }}!</span>
+            <a href="{% url 'dashboard' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 font-semibold hover:text-yellow-600 transition">
+                <i class="fas fa-home w-4 text-yellow-500"></i><span>Home</span>
+            </a>
+            <a href="{% url 'profile' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition text-gray-900">
+                <i class="fas fa-user-circle w-4 text-yellow-500"></i><span>Profile</span>
+            </a>
+        </div>
+
+        {% if request.session.user_role == 'admin' %}
+        <!-- User Management Section -->
+        <div class="mb-2 px-2">
+            <p class="uppercase text-xs font-semibold text-gray-400 mb-1">User Management</p>
+            <!-- Employee Management -->
+            <a href="{% url 'add_user' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+                <i class="fas fa-user-plus w-4 text-yellow-500"></i><span>Add User</span>
+            </a>
+            <a href="{% url 'edituser' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+                <i class="fas fa-user-edit w-4 text-yellow-500"></i><span>Edit User</span>
+            </a>
+            <a href="{% url 'logs' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+                <i class="fas fa-file-alt w-4 text-yellow-500"></i><span>User Logs</span>
+            </a>
+
+            <!-- Customer Management -->
+            <p class="uppercase text-xs font-semibold text-gray-400 mb-1 mt-4">Customer Management</p>
+            <a href="{% url 'user_account' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+                <i class="fas fa-users w-4 text-yellow-500"></i><span>Customers</span>
+            </a>
+            <a href="{% url 'add_customer' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+                <i class="fas fa-user-plus w-4 text-yellow-500"></i><span>Add Customer</span>
+            </a>
+            <a href="{% url 'customer_ledger_create' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+                <i class="fas fa-book w-4 text-yellow-500"></i><span>Create Customer Ledger</span>
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Orders & Transactions -->
+        <div class="mb-2 px-2">
+            <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Orders & Transactions</p>
+            {% if request.session.user_role == 'admin' or request.session.user_role == 'cashier' %}
+            <a href="{% url 'new_sale' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+                <i class="fas fa-cart-plus w-4 text-yellow-500"></i><span>New Order</span>
+            </a>
+            {% endif %}
+            <a href="{% url 'allorder_history' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition {% if request.session.user_role == 'admin' or request.session.user_role == 'cashier' %}mt-1{% endif %}">
+                <i class="fas fa-history w-4 text-yellow-500"></i><span>All Orders History</span>
+            </a>
+            <a href="{% url 'payment_confirmation' 0 %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+                <i class="fas fa-money-check w-4 text-yellow-500"></i><span>Payment Confirmation</span>
+            </a>
+            <a href="{% url 'delivery_confirmation' 0 %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+                <i class="fas fa-truck w-4 text-yellow-500"></i><span>Delivery Confirmation</span>
+            </a>
+        </div>
+
+        {% if request.session.user_role == 'admin' or request.session.user_role == 'employee' %}
+        <!-- Inventory Management -->
+        <div class="mb-2 px-2">
+            <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Inventory</p>
+            <a href="{% url 'addstock' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+                <i class="fas fa-boxes w-4 text-yellow-500"></i><span>Manage Inventory</span>
+            </a>
+            <a href="{% url 'viewstocklevel' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+                <i class="fas fa-layer-group w-4 text-yellow-500"></i><span>View Stock Levels</span>
+            </a>
+        </div>
+        {% endif %}
+
+        {% if request.session.user_role == 'admin' or request.session.user_role == 'cashier' %}
+        <!-- Sales Management -->
+        <div class="mb-2 px-2">
+            <p class="uppercase text-xs font-semibold text-gray-400 mb-1">Sales</p>
+            <a href="{% url 'invoice' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition">
+                <i class="fas fa-file-invoice w-4 text-yellow-500"></i><span>Create Invoice</span>
+            </a>
+            <a href="{% url 'view_sales_report' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-yellow-50 hover:text-yellow-600 transition mt-1">
+                <i class="fas fa-chart-line w-4 text-yellow-500"></i><span>Sales Report</span>
+            </a>
+            <a href="{% url 'inventory_turnover' %}" class="flex items-center space-x-2 px-2 py-1 rounded text-sm bg-yellow-50 text-yellow-600 transition mt-1">
+                <i class="fas fa-sync-alt w-4 text-yellow-500"></i><span>Inventory Turnover</span>
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Logout -->
+        <div class="border-t border-gray-200 mt-auto px-2 py-4">
+            <a href="{% url 'logout' %}" onclick="return confirm('Logout?');" class="flex items-center space-x-2 px-2 py-1 rounded text-sm hover:bg-red-100 hover:text-red-600 transition font-semibold text-red-500 mt-2">
+                <i class="fas fa-sign-out-alt w-4"></i><span>Logout</span>
+            </a>
+        </div>
+    </nav>
+</header>
+
+<!-- Push content so it's not behind the sidebar -->
+<div id="mainContent" class="lg:mr-56 min-h-screen bg-gray-50 transition-all duration-300">
+    <main class="max-w-screen-xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <!-- Messages -->
+        {% if messages %}
+        <div class="mb-6 space-y-2">
+            {% for message in messages %}
+            <div class="p-4 rounded-lg text-sm font-medium animate-fade-in
+                {% if message.tags == 'success' %} bg-green-100 text-green-800 border border-green-200
+                {% elif message.tags == 'error' %} bg-red-100 text-red-800 border border-red-200
+                {% elif message.tags == 'warning' %} bg-yellow-100 text-yellow-800 border border-yellow-200
+                {% else %} bg-gray-100 text-gray-800 border border-gray-200
+                {% endif %}">
+                <div class="flex items-center">
+                    <i class="fas {% if message.tags == 'success' %}fa-check-circle text-green-500
+                            {% elif message.tags == 'error' %}fa-exclamation-circle text-red-500
+                            {% elif message.tags == 'warning' %}fa-exclamation-triangle text-yellow-500
+                            {% else %}fa-info-circle text-gray-500{% endif %} mr-3"></i>
+                    {{ message }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Total Sales -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100">
+                        <i class="fas fa-dollar-sign text-blue-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Total Sales</p>
+                        <p class="text-2xl font-bold text-gray-900">
+                            ₱{{ summary_stats.total_sales|default:"0.00"|floatformat:2|intcomma }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Quantity -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100">
+                        <i class="fas fa-boxes text-green-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Total Quantity</p>
+                        <p class="text-2xl font-bold text-gray-900">
+                            {{ summary_stats.total_quantity|default:"0"|intcomma }} sacks
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Average Turnover -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100">
+                        <i class="fas fa-sync text-yellow-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Average Turnover</p>
+                        <p class="text-2xl font-bold {% if summary_stats.avg_turnover >= 3 %}text-green-600
+                            {% elif summary_stats.avg_turnover >= 1 %}text-yellow-600
+                            {% else %}text-red-600{% endif %}">
+                            {{ summary_stats.avg_turnover|default:"0.00"|floatformat:2 }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white rounded-lg shadow mb-8">
+            <div class="p-6">
+                <form id="filterForm" method="GET" class="space-y-6">
+                    {% if error_message %}
+                    <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-circle text-red-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-red-700">{{ error_message }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <!-- Rice Type -->
+                        <div>
+                            <label for="rice_type" class="block text-sm font-medium text-gray-700 mb-2">Rice Type</label>
+                            <div class="relative">
+                                <select name="rice_type" id="rice_type" 
+                                        class="block w-full pl-10 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md">
+                                    <option value="">All Types</option>
+                                    {% for rice in rice_types %}
+                                    <option value="{{ rice.riceID }}" 
+                                            {% if selected_rice_type == rice.riceID|stringformat:"s" %}selected{% endif %}>
+                                        {{ rice.rice_type }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-box text-gray-400"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Start Month -->
+                        <div>
+                            <label for="start_month" class="block text-sm font-medium text-gray-700 mb-2">Start Month</label>
+                            <div class="relative">
+                                <input type="month" name="start_month" id="start_month"
+                                       value="{{ start_date|date:'Y-m' }}"
+                                       max="{{ current_month }}"
+                                       class="block w-full pl-10 pr-4 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-calendar text-gray-400"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- End Month -->
+                        <div>
+                            <label for="end_month" class="block text-sm font-medium text-gray-700 mb-2">End Month</label>
+                            <div class="relative">
+                                <input type="month" name="end_month" id="end_month"
+                                       value="{{ end_date|date:'Y-m' }}"
+                                       max="{{ current_month }}"
+                                       class="block w-full pl-10 pr-4 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-calendar text-gray-400"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="flex items-end gap-4">
+                            <button type="submit" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                <i class="fas fa-filter mr-2"></i>Apply Filters
+                            </button>
+                            <button type="button" id="currentMonthBtn" 
+                                    class="bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                <i class="fas fa-clock mr-2"></i>Current
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-900">Turnover Details</h2>
+                        <p class="text-sm text-gray-500 mt-1">
+                            {% if start_date and end_date %}
+                                {% if start_date|date:"Y-m" == end_date|date:"Y-m" %}
+                                    Showing data for {{ start_date|date:"F Y" }}
+                                {% else %}
+                                    Showing data from {{ start_date|date:"F Y" }} to {{ end_date|date:"F Y" }}
+                                {% endif %}
+                            {% else %}
+                                Select a date range to view data
+                            {% endif %}
+                        </p>
+                    </div>
+                    {% if turnover_data %}
+                    <button onclick="exportToExcel()" 
+                            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <i class="fas fa-download mr-2"></i>Export
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table id="turnoverTable" class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-box"></i>
+                                    <span>Rice Type</span>
+                                    <i class="fas fa-sort"></i>
+                                </div>
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                                <div class="flex items-center justify-end gap-2">
+                                    <i class="fas fa-warehouse"></i>
+                                    <span>Beginning Stock</span>
+                                    <i class="fas fa-sort"></i>
+                                </div>
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                                <div class="flex items-center justify-end gap-2">
+                                    <i class="fas fa-warehouse"></i>
+                                    <span>Ending Stock</span>
+                                    <i class="fas fa-sort"></i>
+                                </div>
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                                <div class="flex items-center justify-end gap-2">
+                                    <i class="fas fa-shopping-cart"></i>
+                                    <span>Quantity Sold</span>
+                                    <i class="fas fa-sort"></i>
+                                </div>
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                                <div class="flex items-center justify-end gap-2">
+                                    <i class="fas fa-dollar-sign"></i>
+                                    <span>Cost of Goods</span>
+                                    <i class="fas fa-sort"></i>
+                                </div>
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                                <div class="flex items-center justify-end gap-2">
+                                    <i class="fas fa-sync"></i>
+                                    <span>Turnover Ratio</span>
+                                    <i class="fas fa-sort"></i>
+                                </div>
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-calendar"></i>
+                                    <span>Month</span>
+                                    <i class="fas fa-sort"></i>
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% if turnover_data %}
+                            {% for item in turnover_data %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0 h-10 w-10">
+                                            <div class="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center">
+                                                <i class="fas fa-seedling text-yellow-600"></i>
+                                            </div>
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900">{{ item.rice_type }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
+                                    {{ item.beginning_stock|intcomma }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
+                                    {{ item.ending_stock|intcomma }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
+                                    {{ item.total_quantity|intcomma }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
+                                    ₱{{ item.cogs|floatformat:2|intcomma }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                        {% if item.inventory_turnover_ratio >= 3 %}bg-green-100 text-green-800
+                                        {% elif item.inventory_turnover_ratio >= 1 %}bg-yellow-100 text-yellow-800
+                                        {% else %}bg-red-100 text-red-800{% endif %}">
+                                        {{ item.inventory_turnover_ratio|floatformat:2 }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                        {% if item.month|date:'Y-m' == current_month %}
+                                        bg-blue-100 text-blue-800
+                                        {% else %}
+                                        bg-gray-100 text-gray-800
+                                        {% endif %}">
+                                        {{ item.month|date:"F Y" }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">
+                                    {% if error_message %}
+                                        <div class="text-red-600">
+                                            <i class="fas fa-exclamation-circle mr-2"></i>{{ error_message }}
+                                        </div>
+                                    {% else %}
+                                        {% if start_date and end_date %}
+                                            <i class="fas fa-info-circle mr-2"></i>No turnover data available for the selected period
+                                        {% else %}
+                                            <i class="fas fa-calendar mr-2"></i>Select a date range to view turnover data
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    // Sidebar toggle functionality for mobile
+    document.getElementById('sidebarToggle').addEventListener('click', function() {
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('mainContent');
+        
+        if (sidebar.classList.contains('translate-x-full')) {
+            sidebar.classList.remove('translate-x-full');
+            mainContent.classList.add('lg:mr-56');
+        } else {
+            sidebar.classList.add('translate-x-full');
+            mainContent.classList.remove('lg:mr-56');
+        }
+    });
+
+    // Add responsive behavior
+    function checkScreenSize() {
+        const sidebar = document.getElementById('sidebar');
+        if (window.innerWidth < 1024) { // lg breakpoint
+            sidebar.classList.add('translate-x-full');
+        } else {
+            sidebar.classList.remove('translate-x-full');
+        }
+    }
+
+    // Check on load and resize
+    window.addEventListener('load', checkScreenSize);
+    window.addEventListener('resize', checkScreenSize);
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeForm();
+        initializeTable();
+    });
+
+    function initializeForm() {
+        const form = document.getElementById('filterForm');
+        const startMonth = document.getElementById('start_month');
+        const endMonth = document.getElementById('end_month');
+        const currentMonthBtn = document.getElementById('currentMonthBtn');
+        const riceType = document.getElementById('rice_type');
+
+        // Set max date to current month
+        const today = new Date();
+        const maxMonth = today.toISOString().slice(0, 7);
+        startMonth.max = maxMonth;
+        endMonth.max = maxMonth;
+
+        // Set default month if not set
+        if (!startMonth.value || !endMonth.value) {
+            startMonth.value = maxMonth;
+            endMonth.value = maxMonth;
+        }
+
+        // Current month button
+        currentMonthBtn.addEventListener('click', () => {
+            startMonth.value = maxMonth;
+            endMonth.value = maxMonth;
+            riceType.value = '';
+            form.submit();
+        });
+
+        // Form validation
+        form.addEventListener('submit', (e) => {
+            if (!validateDates(startMonth.value, endMonth.value)) {
+                e.preventDefault();
+            }
+        });
+
+        // Auto-submit on rice type change
+        riceType.addEventListener('change', () => form.submit());
+
+        // Update constraints on date change
+        [startMonth, endMonth].forEach(input => {
+            input.addEventListener('change', () => updateDateConstraints(startMonth, endMonth));
+        });
+    }
+
+    function validateDates(start, end) {
+        if (!start || !end) {
+            showToast('Please select both start and end months', 'error');
+            return false;
+        }
+
+        const startDate = new Date(start + '-01');
+        const endDate = new Date(end + '-01');
+        const today = new Date();
+        today.setDate(1);
+        today.setHours(0, 0, 0, 0);
+
+        if (startDate > today || endDate > today) {
+            showToast('Cannot select future dates', 'error');
+            return false;
+        }
+
+        if (startDate > endDate) {
+            showToast('Start month cannot be after end month', 'error');
+            return false;
+        }
+
+        return true;
+    }
+
+    function updateDateConstraints(startMonth, endMonth) {
+        endMonth.min = startMonth.value;
+        startMonth.max = endMonth.value;
+    }
+
+    function initializeTable() {
+        const table = document.getElementById('turnoverTable');
+        if (!table) return;
+
+        const headers = table.querySelectorAll('th');
+        headers.forEach((header, index) => {
+            header.addEventListener('click', () => sortTable(index));
+        });
+    }
+
+    function sortTable(columnIndex) {
+        const table = document.getElementById('turnoverTable');
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr')).filter(row => 
+            row.cells.length > 1
+        );
+
+        const isAscending = !table.querySelector(`th:nth-child(${columnIndex + 1})`).classList.contains('sort-asc');
+
+        // Update sort indicators
+        table.querySelectorAll('th').forEach(th => {
+            th.classList.remove('sort-asc', 'sort-desc');
+            th.querySelector('.fas.fa-sort').className = 'fas fa-sort';
+        });
+
+        const currentHeader = table.querySelector(`th:nth-child(${columnIndex + 1})`);
+        currentHeader.classList.add(isAscending ? 'sort-asc' : 'sort-desc');
+        currentHeader.querySelector('.fas.fa-sort').className = 
+            `fas fa-sort-${isAscending ? 'up' : 'down'}`;
+
+        // Sort rows
+        rows.sort((a, b) => {
+            let aValue = a.cells[columnIndex].textContent.trim();
+            let bValue = b.cells[columnIndex].textContent.trim();
+
+            // Handle numeric values
+            if (aValue.includes('₱')) {
+                aValue = parseFloat(aValue.replace(/[₱,]/g, ''));
+                bValue = parseFloat(bValue.replace(/[₱,]/g, ''));
+            } else if (!isNaN(aValue.replace(/,/g, ''))) {
+                aValue = parseFloat(aValue.replace(/,/g, ''));
+                bValue = parseFloat(bValue.replace(/,/g, ''));
+            }
+
+            if (isAscending) {
+                return aValue > bValue ? 1 : -1;
+            } else {
+                return aValue < bValue ? 1 : -1;
+            }
+        });
+
+        // Reorder rows
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    function showToast(message, type = 'error') {
+        const toast = document.createElement('div');
+        toast.className = `mb-4 p-4 rounded-lg shadow-lg transform transition-all duration-300 
+            ${type === 'error' ? 'bg-red-100 border-l-4 border-red-500 text-red-700' : 
+                                       'bg-green-100 border-l-4 border-green-500 text-green-700'}`;
+        
+        toast.innerHTML = `
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-${type === 'error' ? 'exclamation' : 'check'}-circle"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium">${message}</p>
+                </div>
+                <div class="ml-auto pl-3">
+                    <button class="inline-flex text-gray-400 hover:text-gray-500">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        const container = document.getElementById('toastContainer');
+        container.appendChild(toast);
+
+        // Add click handler to close button
+        toast.querySelector('button').addEventListener('click', () => {
+            toast.classList.add('opacity-0');
+            setTimeout(() => toast.remove(), 300);
+        });
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }
+        }, 5000);
+    }
+
+    function exportToExcel() {
+        const table = document.getElementById('turnoverTable');
+        if (!table) {
+            showToast('No data to export', 'error');
+            return;
+        }
+
+        try {
+            const wb = XLSX.utils.book_new();
+            const headers = Array.from(table.querySelectorAll('th'))
+                .map(th => th.textContent.trim());
+
+            const rows = Array.from(table.querySelectorAll('tbody tr'))
+                .filter(row => row.cells.length > 1)
+                .map(row => Array.from(row.cells).map(cell => {
+                    let value = cell.textContent.trim();
+                    if (value.startsWith('₱')) {
+                        value = parseFloat(value.replace(/[₱,]/g, ''));
+                    } else if (value.includes(',') && !isNaN(value.replace(/,/g, ''))) {
+                        value = parseFloat(value.replace(/,/g, ''));
+                    }
+                    return value;
+                }));
+
+            const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+
+            // Set column widths
+            ws['!cols'] = [
+                { wch: 20 }, // Rice Type
+                { wch: 15 }, // Beginning Stock
+                { wch: 15 }, // Ending Stock
+                { wch: 15 }, // Quantity Sold
+                { wch: 20 }, // Cost of Goods
+                { wch: 15 }, // Turnover Ratio
+                { wch: 15 }  // Month
+            ];
+
+            XLSX.utils.book_append_sheet(wb, ws, 'Inventory Turnover');
+
+            const date = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(wb, `Inventory_Turnover_${date}.xlsx`);
+            
+            showToast('Report exported successfully', 'success');
+        } catch (error) {
+            console.error('Export error:', error);
+            showToast('Failed to export report', 'error');
+        }
+    }
+</script>
+</body>
+</html> 

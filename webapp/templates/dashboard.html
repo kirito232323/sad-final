@@ -856,8 +856,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Function to update orders table
-    function updateOrdersTable(orders) {
+    function updateOrdersTable(data) {
         const container = document.getElementById('ordersTableContainer');
+        const orders = data.orders;
+        const totalPages = Math.ceil(data.total_count / data.per_page);
+        const currentPage = parseInt(data.current_page);
         
         if (!orders || orders.length === 0) {
             container.innerHTML = `
@@ -928,11 +931,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                    title="View Order Details">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <a href="/invoice/${order.order_id}/" 
-                                   class="text-green-600 hover:text-green-800 bg-green-50 hover:bg-green-100 p-1.5 rounded-lg transition-colors" 
-                                   title="Generate Invoice">
-                                    <i class="fas fa-file-invoice"></i>
-                                </a>
                             ` : ''}
                         </div>
                     </td>
@@ -942,6 +940,39 @@ document.addEventListener('DOMContentLoaded', function() {
         tableHTML += `
                 </tbody>
             </table>`;
+
+        // Add pagination
+        if (totalPages > 1) {
+            tableHTML += `
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+                    <div class="flex items-center text-sm text-gray-700">
+                        Showing <span class="font-medium mx-1">${(currentPage - 1) * data.per_page + 1}</span> to 
+                        <span class="font-medium mx-1">${Math.min(currentPage * data.per_page, data.total_count)}</span> of 
+                        <span class="font-medium mx-1">${data.total_count}</span> results
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="changePage(${currentPage - 1})" 
+                                class="px-3 py-1 rounded-md flex items-center gap-1 ${currentPage === 1 
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                    : 'bg-white border text-gray-700 hover:bg-gray-50'}"
+                                ${currentPage === 1 ? 'disabled' : ''}>
+                            <i class="fas fa-chevron-left text-xs"></i>
+                            <span>Previous</span>
+                        </button>
+                        <div class="flex items-center gap-1">
+                            ${generatePageNumbers(currentPage, totalPages)}
+                        </div>
+                        <button onclick="changePage(${currentPage + 1})"
+                                class="px-3 py-1 rounded-md flex items-center gap-1 ${currentPage === totalPages 
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                    : 'bg-white border text-gray-700 hover:bg-gray-50'}"
+                                ${currentPage === totalPages ? 'disabled' : ''}>
+                            <span>Next</span>
+                            <i class="fas fa-chevron-right text-xs"></i>
+                        </button>
+                    </div>
+                </div>`;
+        }
 
         container.innerHTML = tableHTML;
     }
@@ -957,11 +988,76 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     }
 
-    // Function to fetch filtered orders
-    async function fetchFilteredOrders() {
-        showLoading();
+    // Function to generate page numbers
+    function generatePageNumbers(currentPage, totalPages) {
+        let pages = [];
+        const maxVisiblePages = 5;
+        const halfVisible = Math.floor(maxVisiblePages / 2);
+
+        if (totalPages <= maxVisiblePages) {
+            // Show all pages if total pages are less than max visible
+            for (let i = 1; i <= totalPages; i++) {
+                pages.push(i);
+            }
+        } else {
+            // Calculate range
+            let startPage = Math.max(currentPage - halfVisible, 1);
+            let endPage = Math.min(startPage + maxVisiblePages - 1, totalPages);
+
+            // Adjust start if we're near the end
+            if (endPage === totalPages) {
+                startPage = Math.max(endPage - maxVisiblePages + 1, 1);
+            }
+
+            // Add first page and ellipsis if needed
+            if (startPage > 1) {
+                pages.push(1);
+                if (startPage > 2) pages.push('...');
+            }
+
+            // Add pages in range
+            for (let i = startPage; i <= endPage; i++) {
+                pages.push(i);
+            }
+
+            // Add last page and ellipsis if needed
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) pages.push('...');
+                pages.push(totalPages);
+            }
+        }
+
+        return pages.map(page => {
+            if (page === '...') {
+                return `<span class="px-3 py-1 text-gray-500">...</span>`;
+            }
+            return `
+                <button onclick="changePage(${page})"
+                        class="px-3 py-1 rounded-md ${currentPage === page 
+                            ? 'bg-yellow-500 text-white font-medium' 
+                            : 'bg-white border text-gray-700 hover:bg-gray-50'}"
+                        ${currentPage === page ? 'disabled' : ''}>
+                    ${page}
+                </button>`;
+        }).join('');
+    }
+
+    // Function to change page
+    window.changePage = async function(page) {
+        if (page < 1) return;
         const form = document.getElementById('orderFiltersForm');
         const formData = new FormData(form);
+        formData.append('page', page);
+        await fetchFilteredOrders(formData);
+    }
+
+    // Function to fetch filtered orders
+    async function fetchFilteredOrders(formData = null) {
+        showLoading();
+        if (!formData) {
+            const form = document.getElementById('orderFiltersForm');
+            formData = new FormData(form);
+        }
         const queryString = new URLSearchParams(formData).toString();
 
         try {
@@ -973,13 +1069,18 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             if (data.status === 'success') {
-                updateOrdersTable(data.orders);
+                updateOrdersTable(data);
                 
                 // Update order count
                 const orderCount = document.querySelector('.bg-yellow-100.text-yellow-800');
                 if (orderCount) {
-                    orderCount.textContent = `${data.orders.length} orders`;
+                    orderCount.textContent = `${data.total_count} orders`;
                 }
+
+                // Update URL with current page
+                const url = new URL(window.location.href);
+                url.searchParams.set('page', data.current_page);
+                window.history.pushState({}, '', url);
             } else {
                 throw new Error(data.message || 'Error fetching orders');
             }
