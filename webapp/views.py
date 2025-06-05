@@ -9,6 +9,7 @@ from django.views.decorators.http import require_POST
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
 from .models import UserLog, Rice, Stock
+from django.db.models import Sum, F
 
 from django.shortcuts import render
 from django.http import HttpResponse
@@ -65,8 +66,12 @@ def stock_movement_report(request):
     return render(request, 'view_sales_report.html', {'stock_movement_data': stock_data})
 
 
+from django.shortcuts import render
+from .models import Users, CustomerOrder, CustomerLedger
 
 def customer_ledger_create(request):
+    customers = Users.objects.all()
+
     if request.method == 'POST':
         customer_id = request.POST.get('customer')
         order_id = request.POST.get('order') or None
@@ -75,12 +80,19 @@ def customer_ledger_create(request):
         amount = request.POST.get('amount')
         remarks = request.POST.get('remarks')
 
+        # Validate required fields
+        if not customer_id or not transaction_type or not amount:
+            return render(request, 'ledger.html', {
+                'error': 'Customer, transaction type, and amount are required.',
+                'customers': customers
+            })
+
         try:
             customer = Users.objects.get(UserID=customer_id)
         except Users.DoesNotExist:
-            return render(request, 'ledger_entry.html', {
+            return render(request, 'ledger.html', {
                 'error': 'Selected customer does not exist.',
-                'customers': Users.objects.all()
+                'customers': customers
             })
 
         order = None
@@ -88,31 +100,37 @@ def customer_ledger_create(request):
             try:
                 order = CustomerOrder.objects.get(order_id=order_id, customer=customer)
             except CustomerOrder.DoesNotExist:
-                return render(request, 'ledger_entry.html', {
+                return render(request, 'ledger.html', {
                     'error': 'Selected order does not exist for this customer.',
-                    'customers': Users.objects.all()
+                    'customers': customers
                 })
 
-        # Create ledger entry
+        try:
+            amount = float(amount)
+        except ValueError:
+            return render(request, 'ledger.html', {
+                'error': 'Amount must be a valid number.',
+                'customers': customers
+            })
+
+        # Save the ledger entry
         ledger = CustomerLedger(
             customer=customer,
             order=order,
             transaction_type=transaction_type,
-            reference=reference,
+            reference=reference or '',
             amount=amount,
-            remarks=remarks,
+            remarks=remarks or ''
         )
         ledger.save()
 
         return render(request, 'ledger.html', {
             'message': 'Customer ledger entry created successfully.',
-            'customers': Users.objects.all()
+            'customers': customers
         })
 
-    # GET request, render form
-    customers = Users.objects.all()
+    # GET request
     return render(request, 'ledger.html', {'customers': customers})
-
 
 from django.http import JsonResponse
 from .models import CustomerOrder, Users
@@ -182,10 +200,12 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.units import mm
 from .models import CustomerOrder
 
-def invoice_view(request): 
+def invoice_view(request, order_id=None): 
     orders = CustomerOrder.objects.all().order_by('-created_at')
     selected_order = None
-    order_id = request.POST.get('order_id') or request.GET.get('order_id')
+    
+    # Get order_id from URL parameter or POST/GET data
+    order_id = order_id or request.POST.get('order_id') or request.GET.get('order_id')
 
     if order_id:
         try:
@@ -266,6 +286,43 @@ def invoice_view(request):
         'invoice_number': f'INV-{order_id or "N/A"}',
     }
     return render(request, 'invoice.html', context)
+
+
+
+from django.shortcuts import get_object_or_404
+from django.core.mail import EmailMessage
+from django.template.loader import render_to_string
+from django.http import HttpResponse
+from .models import CustomerOrder  # make sure model import matches your actual model name
+
+def send_invoice(request):
+    if request.method == 'POST':
+        order_id = request.POST.get('order_id')
+        order = get_object_or_404(CustomerOrder, order_id=order_id)
+
+        # Render invoice HTML content (make sure you have invoice_template.html ready)
+        invoice_html = render_to_string('invoice_print.html', {
+            'order': order,
+            'invoice_number': order.reference_code or f"{order.order_id}",  # fallback if no reference_code
+        })
+
+        # Send email if customer email exists
+        customer_email = getattr(order.customer, 'email', None)
+        if customer_email:
+            email = EmailMessage(
+                subject=f"Invoice #{order.reference_code or order.order_id} from Dragon Ricemill",
+                body=invoice_html,
+                from_email='dragonricemill@gmail.com',
+                to=[customer_email],
+            )
+            email.content_subtype = 'html'  # send as HTML email
+            email.send(fail_silently=True)
+
+        # Return invoice HTML for printing/viewing
+        return HttpResponse(invoice_html)
+
+    return HttpResponse(status=405)  # Method Not Allowed if not POST
+
 
 
 @require_POST
@@ -593,18 +650,53 @@ def dashboard_view(request):
 
     stock_data = Stock.objects.select_related('rice_type').all()
 
-    recent_sales = CustomerOrder.objects.filter(approval_status='Approved') \
-        .select_related('rice_type') \
-        .order_by('-created_at')[:5]
+    # Get all orders with filters
+    orders = CustomerOrder.objects.select_related('customer', 'rice_type').order_by('-created_at')
 
-    total_sales_today = CustomerOrder.objects.filter(
+    # Apply filters
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    customer_search = request.GET.get('customer')
+    rice_type = request.GET.get('rice_type')
+    payment_status = request.GET.get('payment_status')
+    delivery_status = request.GET.get('delivery_status')
+
+    if date_from:
+        orders = orders.filter(created_at__date__gte=date_from)
+    if date_to:
+        orders = orders.filter(created_at__date__lte=date_to)
+    if customer_search:
+        orders = orders.filter(
+            Q(customer__name__first_name__icontains=customer_search) |
+            Q(customer__name__last_name__icontains=customer_search)
+        )
+    if rice_type:
+        orders = orders.filter(rice_type__rice_type=rice_type)
+    if payment_status:
+        if payment_status == 'paid':
+            orders = orders.filter(amount_paid__gte=F('total_cost'))
+        elif payment_status == 'partial':
+            orders = orders.filter(amount_paid__gt=0, amount_paid__lt=F('total_cost'))
+        elif payment_status == 'unpaid':
+            orders = orders.filter(amount_paid=0)
+    if delivery_status:
+        orders = orders.filter(delivery_status__iexact=delivery_status)
+
+    # Get recent supplier orders
+    supplier_orders = Supplier.objects.select_related('employee').order_by('-purchase_date')[:10]
+
+    # Calculate total sales from paid orders today
+    paid_orders_today = CustomerOrder.objects.filter(
         created_at__date=date.today(),
-        approval_status='Approved'
-    ).aggregate(total_sales=Sum('amount_paid'))['total_sales'] or 0
+        amount_paid__gte=F('total_cost')
+    ).aggregate(total_sales=Sum('total_cost'))['total_sales'] or 0
 
     stock_out_count = stock_data.filter(current_stock=0).count()
     low_stock_count = stock_data.filter(current_stock__lte=100).exclude(current_stock=0).count()
     total_rice_types = stock_data.values('rice_type').distinct().count()
+
+    # Get all unique rice types for the filter dropdown
+    rice_types = Rice.objects.all().order_by('rice_type')
 
     # Calculate best-selling and lowest-selling rice types
     sales_aggregation = CustomerOrder.objects.filter(approval_status='Approved') \
@@ -663,8 +755,9 @@ def dashboard_view(request):
 
     return render(request, "dashboard.html", {
         'stock_data': stock_data,
-        'recent_sales': recent_sales,
-        'total_sales_today': total_sales_today,
+        'orders': orders,
+        'supplier_orders': supplier_orders,
+        'paid_orders_today': paid_orders_today,
         'stock_out_today': stock_out_count,
         'low_stock_warnings': low_stock_count,
         'total_rice_types': total_rice_types,
@@ -675,6 +768,7 @@ def dashboard_view(request):
         'role': role,
         'employee_id': employee_id,
         'announcements': announcements,
+        'rice_types': rice_types,  # Add this for the filter dropdown
     })
 
 
@@ -726,8 +820,13 @@ def permanent_delete_user(request, employee_id):
     if request.method == 'POST':
         user = get_object_or_404(Employee, EmployeeID=employee_id)
         user.delete()
-        messages.success(request, "User permanently deleted.")
-    return redirect('edituser')  # or your user list page
+        messages.success(request, f"User {user.Username} has been permanently deleted.")
+        
+        # Get the referring page
+        referer = request.META.get('HTTP_REFERER', '')
+        if 'archive' in referer:
+            return redirect('archive')
+    return redirect('edituser')
 
 def toggle_notification(request):
     notif_id = request.POST.get('id')
@@ -740,61 +839,67 @@ def toggle_notification(request):
         request.session['read_notifications'] = read_notifications
     return JsonResponse({'status': 'ok'})
 
-from django.views.decorators.http import require_POST
-from django.http import JsonResponse
-from webapp.models import UserName, UserAddress, Users  # Adjust if needed
+from django.shortcuts import render
+from django.views.decorators.http import require_http_methods
+from django.contrib import messages
+from webapp.models import UserName, UserAddress, Users
 
 @require_http_methods(["GET", "POST"])
 def add_customer(request):
     if request.method == 'GET':
         return render(request, 'add_customer.html')
-        
+    
     elif request.method == 'POST':
         try:
             # Extract form data
-            first_name = request.POST.get('first_name')
-            middle_name = request.POST.get('middle_name', '')
-            last_name = request.POST.get('last_name')
-            suffix = request.POST.get('suffix', '')
-            customer_mobile_number = request.POST.get('customer_mobile_number')
-            house_unit_number = request.POST.get('house_unit_number')
-            building_name = request.POST.get('building_name', '')
-            street_name = request.POST.get('street_name', '')
-            barangay = request.POST.get('barangay')
-            city_municipality = request.POST.get('city_municipality')
-            province = request.POST.get('province')
-            zip_code = request.POST.get('zip_code')
+            first_name = request.POST.get('first_name', '').strip()
+            middle_name = request.POST.get('middle_name', '').strip()
+            last_name = request.POST.get('last_name', '').strip()
+            suffix = request.POST.get('suffix', '').strip()
+            customer_mobile_number = request.POST.get('customer_mobile_number', '').strip()
+            email = request.POST.get('email', '').strip()
+
+            house_unit_number = request.POST.get('house_unit_number', '').strip()
+            building_name = request.POST.get('building_name', '').strip()
+            street_name = request.POST.get('street_name', '').strip()
+            barangay = request.POST.get('barangay', '').strip()
+            city_municipality = request.POST.get('city_municipality', '').strip()
+            province = request.POST.get('province', '').strip()
+            zip_code = request.POST.get('zip_code', '').strip()
 
             # Validate required fields
-            if not all([first_name, last_name, customer_mobile_number, house_unit_number, 
-                       street_name, barangay, city_municipality, province, zip_code]):
+            required_fields = [first_name, last_name, customer_mobile_number, house_unit_number, 
+                               street_name, barangay, city_municipality, province, zip_code]
+
+            if not all(required_fields):
                 messages.error(request, 'Please fill in all required fields.')
                 return render(request, 'add_customer.html')
 
             # Create UserName record
             user_name = UserName.objects.create(
                 first_name=first_name,
-                middle_name=middle_name,
+                middle_name=middle_name or None,
                 last_name=last_name,
-                suffix=suffix
+                suffix=suffix or None
             )
 
             # Create UserAddress record
             user_address = UserAddress.objects.create(
-                house_unit_number=house_unit_number,
-                building_name=building_name,
-                street_name=street_name,
-                barangay=barangay,
-                city_municipality=city_municipality,
-                province=province,
-                zip_code=zip_code
+                house_unit_number=house_unit_number or None,
+                building_name=building_name or None,
+                street_name=street_name or None,
+                barangay=barangay or None,
+                city_municipality=city_municipality or None,
+                province=province or None,
+                zip_code=zip_code or None
             )
 
-            # Create Users record with the related models
+            # Create Users record with related name and address
             user = Users.objects.create(
                 name=user_name,
                 address=user_address,
-                Customer_Mobile_Number=customer_mobile_number
+                Customer_Mobile_Number=customer_mobile_number,
+                email=email or None
             )
 
             messages.success(request, 'Customer added successfully!')
@@ -922,37 +1027,107 @@ def view_sales_report(request):
 
 from django.shortcuts import render
 from .models import Rice, Stock
-from django.db.models import F
+from django.utils.timezone import now
 
 def inventory_turnover(request):
-    rice_filter = request.GET.get('rice_type')
+    # Get filter parameters
+    rice_filter = request.GET.get('rice_type', '')
+    start_month = request.GET.get('start_month', '')
+    end_month = request.GET.get('end_month', '')
 
     # Get all rice types for the dropdown
-    rice_types = Rice.objects.filter(is_active=True)
+    rice_types = Rice.objects.all()
 
-    # Base query
-    turnover_data = Stock.objects.select_related('rice_type').all()
+    # Get the first day of the current month
+    current_month = now().date().replace(day=1)
 
-    if rice_filter:
-        turnover_data = turnover_data.filter(rice_type__riceID=rice_filter)
+    # Initialize turnover data list and summary stats
+    turnover_data = []
+    summary_stats = {
+        'total_sales': Decimal('0.00'),
+        'total_quantity': 0,
+        'avg_turnover': 0
+    }
 
-    # Simulate COGS and Inventory Turnover for each stock
-    for item in turnover_data:
-        item.cogs = item.stock_out * item.price_per_sack
-        try:
-            item.inventory_turnover_ratio = round(item.cogs / ((item.stock_in + item.stock_out) / 2), 2)
-        except ZeroDivisionError:
-            item.inventory_turnover_ratio = 0
+    try:
+        # Convert string dates to datetime objects
+        if start_month and end_month:
+            start_date = datetime.strptime(f"{start_month}-01", "%Y-%m-%d")
+            end_date = datetime.strptime(f"{end_month}-01", "%Y-%m-%d")
+            
+            # Query orders within date range and only approved orders
+            orders = CustomerOrder.objects.filter(
+                created_at__range=[start_date, end_date],
+                approval_status='Approved'
+            )
+
+            # Apply rice type filter if selected
+            if rice_filter:
+                orders = orders.filter(rice_type_id=rice_filter)
+                rice_types = rice_types.filter(riceID=rice_filter)
+
+            # Group orders by rice type and month
+            for rice in rice_types:
+                rice_orders = orders.filter(rice_type=rice)
+                
+                # Calculate total quantity and sales for this rice type
+                total_quantity = rice_orders.aggregate(total=Sum('quantity'))['total'] or 0
+                total_sales = rice_orders.aggregate(total=Sum('total_cost'))['total'] or Decimal('0.00')
+
+                # Get stock data for this rice type
+                stocks = Stock.objects.filter(rice_type=rice)
+                beginning_stock = stocks.aggregate(total=Sum('stock_in'))['total'] or 0
+                ending_stock = stocks.aggregate(total=Sum('current_stock'))['total'] or 0
+                
+                # Calculate turnover ratio
+                avg_inventory = (beginning_stock + ending_stock) / 2 if (beginning_stock + ending_stock) > 0 else 1
+                turnover_ratio = round(float(total_sales) / float(avg_inventory), 2) if avg_inventory else 0
+
+                turnover_data.append({
+                    'rice_type': rice.rice_type,
+                    'beginning_stock': beginning_stock,
+                    'ending_stock': ending_stock,
+                    'total_quantity': total_quantity,
+                    'cogs': total_sales,
+                    'inventory_turnover_ratio': turnover_ratio,
+                    'month': start_date,  # Use start_date for display
+                })
+
+                # Update summary stats
+                summary_stats['total_sales'] += total_sales
+                summary_stats['total_quantity'] += total_quantity
+
+            # Calculate average turnover ratio
+            if turnover_data:
+                summary_stats['avg_turnover'] = round(
+                    sum(item['inventory_turnover_ratio'] for item in turnover_data) / len(turnover_data),
+                    2
+                )
+
+    except ValueError as e:
+        # Handle date parsing errors
+        context = {
+            'error_message': 'Invalid date format. Please use YYYY-MM format.',
+            'rice_types': rice_types,
+            'selected_rice_type': rice_filter,
+            'current_month': current_month,
+        }
+        return render(request, 'Inventory_Turnover_Report.html', context)
+
+    # Sort turnover data by date and then by rice type
+    turnover_data.sort(key=lambda x: (x['month'], x['rice_type']))
 
     context = {
         'turnover_data': turnover_data,
         'rice_types': rice_types,
         'selected_rice_type': rice_filter,
+        'current_month': current_month,
+        'start_date': start_date if start_month else None,
+        'end_date': end_date if end_month else None,
+        'summary_stats': summary_stats,
     }
 
     return render(request, 'Inventory_Turnover_Report.html', context)
-
-
 
 from django.shortcuts import render
 from .models import Supplier
@@ -1086,7 +1261,53 @@ def adduser(request):
 
     return render(request, 'adduser.html')
 
+from django.shortcuts import render
 
+from django.core.paginator import Paginator
+from django.shortcuts import render
+from .models import CustomerOrder
+
+def archive_view(request):
+    # Get deleted and inactive users
+    deleted_users = Employee.objects.filter(
+        Account_Status__in=['deleted', 'inactive']
+    ).order_by('EmployeeID')
+    
+    # Get cancelled and deleted orders
+    archived_orders = CustomerOrder.objects.select_related(
+        'customer', 'rice_type', 'handled_by'
+    ).filter(
+        approval_status__in=['cancelled', 'deleted']
+    ).order_by('-created_at')
+    
+    # Get archived rice types
+    archived_rice = Rice.objects.filter(
+        is_active=False
+    ).order_by('riceID')
+    
+    # Get counts for stats
+    total_orders = CustomerOrder.objects.count()
+    cancelled_count = CustomerOrder.objects.filter(approval_status='cancelled').count()
+    deleted_count = CustomerOrder.objects.filter(approval_status='deleted').count()
+
+    # Set up pagination for orders
+    paginator = Paginator(archived_orders, 10)  # Show 10 orders per page
+    page = request.GET.get('page')
+    try:
+        page_obj = paginator.get_page(page)
+    except:
+        page_obj = paginator.get_page(1)
+
+    context = {
+        "archived_orders": page_obj,
+        "deleted_users": deleted_users,
+        "archived_rice": archived_rice,
+        "total_orders": total_orders,
+        "cancelled_count": cancelled_count,
+        "deleted_count": deleted_count,
+    }
+    
+    return render(request, "archive.html", context)
 
 def delete_user(request, EmployeeID):
     user = get_object_or_404(Employee, EmployeeID=EmployeeID)
@@ -1102,6 +1323,11 @@ def restore_user(request, employee_id):
     user.Account_Status = 'active'  # Correct field name from your table
     user.save()
     messages.success(request, f'User {user.Username} restored.')
+    
+    # Get the referring page
+    referer = request.META.get('HTTP_REFERER', '')
+    if 'archive' in referer:
+        return redirect('archive')
     return redirect('edituser')
 
 
@@ -1427,11 +1653,12 @@ def get_customer_details(request):
         'receiver_mobile_number': getattr(customer, 'receiver_mobile_number', ''),
         # add other fields as needed
     }
-
 from decimal import Decimal, InvalidOperation
 from django.http import JsonResponse
-from django.utils.crypto import get_random_string
+from django.db.models import Case, When, BooleanField
+from django.shortcuts import render
 from .models import CustomerOrder, Stock, Users, Employee
+from django.core.paginator import Paginator
 
 def process_order(request):
     if request.method != "POST":
@@ -1443,7 +1670,9 @@ def process_order(request):
     delivery_type = request.POST.get("delivery_type", "delivery").lower()
     payment_method = request.POST.get("payment_method", "cash").lower()
 
-    print(f"Processing order - Delivery Type: {delivery_type}, Payment Method: {payment_method}")
+    # Get receiver info from POST
+    receiver_name = request.POST.get("receiver_name", "").strip()
+    receiver_mobile_number = request.POST.get("receiver_mobile_number", "").strip()
 
     if not stock_id:
         return JsonResponse({'status': 'error', 'message': 'Please select a rice type.'})
@@ -1456,7 +1685,7 @@ def process_order(request):
         return JsonResponse({'status': 'error', 'message': 'Selected stock does not exist.'})
 
     try:
-        customer = Users.objects.select_related('address').get(UserID=customer_id)
+        customer = Users.objects.get(UserID=customer_id)
     except Users.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Customer not found.'})
 
@@ -1480,8 +1709,6 @@ def process_order(request):
     total_cost = max(total_cost, Decimal('0.00'))
     amount_change = max(amount_paid - total_cost, Decimal('0.00'))
 
-    print(f"Order details - Total Cost: {total_cost}, Amount Paid: {amount_paid}")
-
     try:
         order = CustomerOrder.objects.create(
             customer=customer,
@@ -1495,16 +1722,15 @@ def process_order(request):
             amount_change=amount_change,
             delivery_type=delivery_type,
             delivery_status='pending',
-            approval_status='pending',  # Always set to pending initially
+            approval_status='pending',
             employee=employee,
-            is_active=True
+            is_active=True,
+            receiver_name=receiver_name or None,
+            receiver_mobile_number=receiver_mobile_number or None
         )
-        print(f"Order created successfully - ID: {order.order_id}, Active: {order.is_active}")
         return JsonResponse({'status': 'success', 'message': 'Order created successfully.'})
     except Exception as e:
-        print(f"Error creating order: {str(e)}")
         return JsonResponse({'status': 'error', 'message': f'Order creation failed: {str(e)}'})
-
 
 
 from django.core.paginator import Paginator
@@ -1697,7 +1923,7 @@ def view_sales_history(request):
 from django.core.paginator import Paginator
 from django.shortcuts import render
 from django.db import connection
-from datetime import datetime
+from datetime import datetime as dt  # ✅ Alias to avoid name conflict
 
 def user_logs(request):
     # Get filter values
@@ -1720,12 +1946,12 @@ def user_logs(request):
     for log in logs:
         timestamp = log[2]
 
-        if isinstance(timestamp, datetime):
+        if isinstance(timestamp, dt):  # ✅ Use alias safely
             date_str = timestamp.strftime("%Y-%m-%d")
             time_str = timestamp.strftime("%H:%M:%S")
         elif isinstance(timestamp, str):
             try:
-                parsed = datetime.fromisoformat(timestamp)
+                parsed = dt.fromisoformat(timestamp)  # ✅ Safe parsing
                 date_str = parsed.strftime("%Y-%m-%d")
                 time_str = parsed.strftime("%H:%M:%S")
             except ValueError:
@@ -1750,7 +1976,12 @@ def user_logs(request):
     if filter_time:
         log_entries = [log for log in log_entries if log['time'] == filter_time]
     if filter_action:
-        log_entries = [log for log in log_entries if filter_action in log['details'].lower() or filter_action in log['employee_name'].lower() or filter_action in log['role'].lower()]
+        log_entries = [
+            log for log in log_entries
+            if filter_action in log['details'].lower()
+            or filter_action in log['employee_name'].lower()
+            or filter_action in log['role'].lower()
+        ]
 
     paginator = Paginator(log_entries, 10)
     page_number = request.GET.get('page')
@@ -1760,7 +1991,6 @@ def user_logs(request):
         'logs': page_obj,
         'page_obj': page_obj,
     })
-
 
 
 
@@ -1934,7 +2164,6 @@ def inventory_turnover_report(request):
         'start_date': start_date,
         'end_date': end_date,
     })
-
 
 from django.shortcuts import render
 from django.http import JsonResponse
@@ -2605,9 +2834,11 @@ def allorder_history(request):
     rice_type = request.GET.get('rice_type', '')
     start_date = request.GET.get('start_date', '')
     end_date = request.GET.get('end_date', '')
-    order_status = request.GET.get('order_status', '')
 
-    # Base queryset
+    # Get and clear order message from session
+    order_message = request.session.pop('order_message', None)
+
+    # Base queryset - get all orders
     orders = CustomerOrder.objects.all()
 
     # Apply filters
@@ -2629,53 +2860,67 @@ def allorder_history(request):
         orders = orders.filter(rice_type__rice_type__iexact=rice_type)
 
     if start_date:
-        orders = orders.filter(created_at__gte=start_date)
+        orders = orders.filter(created_at__date__gte=start_date)
 
     if end_date:
-        orders = orders.filter(created_at__lte=end_date)
+        orders = orders.filter(created_at__date__lte=end_date)
 
-    if order_status:
-        orders = orders.filter(approval_status=order_status)
-    else:
-        # If no status filter, show both confirmed and cancelled orders
-        orders = orders.filter(Q(approval_status='confirmed') | Q(approval_status='cancelled'))
+    # Split orders into active and cancelled
+    active_orders = orders.filter(approval_status='confirmed')
+    cancelled_orders = orders.filter(approval_status='cancelled')
 
-    # Calculate statistics
-    total_orders = orders.count()
-    cancelled_count = orders.filter(approval_status='cancelled').count()
-    total_revenue = orders.aggregate(Sum('total_cost'))['total_cost__sum'] or 0
-    total_quantity = orders.aggregate(Sum('quantity'))['quantity__sum'] or 0
+    # Calculate statistics for active orders only
+    total_orders = active_orders.count()
+    total_revenue = active_orders.aggregate(Sum('total_cost'))['total_cost__sum'] or 0
+    total_quantity = active_orders.aggregate(Sum('quantity'))['quantity__sum'] or 0
+    cancelled_count = cancelled_orders.count()
 
-    # Get unique rice types for filter
-    rice_types = Rice.objects.all()
+    # Select related fields for better performance
+    active_orders = active_orders.select_related('customer', 'rice_type', 'employee').order_by('-created_at')
+    cancelled_orders = cancelled_orders.select_related('customer', 'rice_type', 'employee').order_by('-created_at')
 
-    # Pagination
-    paginator = Paginator(orders.order_by('-created_at'), 10)
-    page = request.GET.get('page')
+    # Separate pagination for active and cancelled orders
+    active_paginator = Paginator(active_orders, 10)
+    cancelled_paginator = Paginator(cancelled_orders, 10)
+
+    active_page = request.GET.get('active_page', 1)
+    cancelled_page = request.GET.get('cancelled_page', 1)
+
     try:
-        page_obj = paginator.get_page(page)
-    except PageNotAnInteger:
-        page_obj = paginator.get_page(1)
-    except EmptyPage:
-        page_obj = paginator.get_page(paginator.num_pages)
+        active_page_obj = active_paginator.page(active_page)
+    except (PageNotAnInteger, EmptyPage):
+        active_page_obj = active_paginator.page(1)
+
+    try:
+        cancelled_page_obj = cancelled_paginator.page(cancelled_page)
+    except (PageNotAnInteger, EmptyPage):
+        cancelled_page_obj = cancelled_paginator.page(1)
 
     context = {
-        'page_obj': page_obj,
+        'active_page_obj': active_page_obj,
+        'cancelled_page_obj': cancelled_page_obj,
         'total_orders': total_orders,
-        'cancelled_count': cancelled_count,
         'total_revenue': total_revenue,
         'total_quantity': total_quantity,
-        'rice_types': rice_types,
+        'cancelled_count': cancelled_count,
+        'rice_types': Rice.objects.all(),
+        'order_message': order_message,  # Add order message to context
     }
 
     return render(request, 'allorder_history.html', context)
 
+from django.shortcuts import render, redirect, get_object_or_404
+from django.db.models import F, Sum, Q
+from django.core.mail import send_mail
+from django.conf import settings
+from decimal import Decimal, InvalidOperation
+from .models import CustomerOrder, Stock
+import traceback
+
 def payment_confirmation(request, order_id):
-    # Get and clear any payment messages from session
     payment_message = request.session.pop('payment_message', None)
     payment_message_type = request.session.pop('payment_message_type', None)
 
-    # Validate order_id is a positive integer or zero
     if not str(order_id).isdigit() or int(order_id) < 0:
         return render(request, 'payment_confirmation.html', {
             'orders': [],
@@ -2684,140 +2929,234 @@ def payment_confirmation(request, order_id):
 
     order_id = int(order_id)
 
+    # Process payment
+    if request.method == 'POST' and 'amount' in request.POST:
+        try:
+            order = get_object_or_404(CustomerOrder, order_id=order_id)
+            amount = Decimal(request.POST.get('amount', '0'))
+            amount_change = Decimal(request.POST.get('amount_change', '0'))
+            print_invoice = request.POST.get('print_invoice') == 'true'
+            
+            # Update order with payment details
+            order.amount_paid = amount
+            order.amount_change = amount_change
+            order.approval_status = 'confirmed'
+            order.save()
+
+            # Send email confirmation
+            if order.customer and order.customer.email:
+                try:
+                    # Get customer's full name
+                    customer_name = f"{order.customer.name.first_name} {order.customer.name.last_name}" if order.customer.name else "Valued Customer"
+                    
+                    # Send confirmation email
+                    send_mail(
+                        subject=f'[Dragon Ricemill] Payment Confirmation for Order #{order.order_id}',
+                        message=(
+                            f"Dear {customer_name},\n\n"
+                            f"Thank you for your recent order with Dragon Ricemill. We are pleased to confirm that we have received your payment for Order #{order.order_id}.\n\n"
+                            f"📦 Order Details:\n"
+                            f"• Rice Type: {order.rice_type}\n"
+                            f"• Quantity: {order.quantity} sack(s)\n"
+                            f"• Total Amount: ₱{order.total_cost:.2f}\n"
+                            f"• Amount Paid: ₱{order.amount_paid:.2f}\n"
+                            f"• Change: ₱{amount_change:.2f}\n"
+                            f"• Payment Method: {order.payment_method}\n\n"
+                            f"Your order is now being processed. You will receive a notification once your order is ready for delivery.\n\n"
+                            f"If you have any questions or concerns, feel free to contact us.\n\n"
+                            f"Best regards,\n"
+                            f"The Dragon Ricemill Team\n\n"
+                            f"📧 dragonricemill@gmail.com\n"
+                        ),
+                        from_email='dragonricemill@gmail.com',
+                        recipient_list=[order.customer.email],
+                        fail_silently=False
+                    )
+
+                except Exception as e:
+                    print(f"Email error: {str(e)}")
+                    request.session['payment_message'] = f"Payment processed but email notification failed: {str(e)}"
+                    request.session['payment_message_type'] = 'warning'
+                    return redirect('payment_confirmation', order_id=0)
+
+            request.session['payment_message'] = f"Payment of ₱{amount:.2f} processed successfully."
+            request.session['payment_message_type'] = 'success'
+
+            # If invoice was requested, redirect to invoice view
+            if print_invoice:
+                return redirect('invoice', order_id=order_id)
+            
+            # Otherwise redirect based on delivery type
+            if order.delivery_type.lower() == 'delivery' and order.amount_paid >= order.total_cost:
+                return redirect('delivery_confirmation', order_id=0)
+            return redirect('payment_confirmation', order_id=0)
+
+        except Exception as e:
+            request.session['payment_message'] = f"Error processing payment: {str(e)}"
+            request.session['payment_message_type'] = 'error'
+            return redirect('payment_confirmation', order_id=0)
+
+    # ✅ If ID is 0, show list
     if order_id == 0:
-        # Get all orders first for debugging
-        all_orders = CustomerOrder.objects.all()
-        print(f"Total orders in database: {all_orders.count()}")
+        search = request.GET.get('search', '')
+        payment_method = request.GET.get('payment_method', '')
+        start_date = request.GET.get('start_date', '')
+        end_date = request.GET.get('end_date', '')
 
-        # Show orders where:
-        # 1. Order is active
-        active_orders = all_orders.filter(is_active=True)
-        print(f"Active orders: {active_orders.count()}")
+        orders = CustomerOrder.objects.filter(
+            is_active=True,
+            approval_status__iexact='pending',
+            amount_paid__lt=F('total_cost')
+        )
 
-        # 2. Status is pending
-        pending_active_orders = active_orders.filter(approval_status__iexact='pending')
-        print(f"Pending active orders: {pending_active_orders.count()}")
+        if search:
+            orders = orders.filter(
+                Q(order_id__icontains=search) |
+                Q(customer__name__first_name__icontains=search) |
+                Q(customer__name__last_name__icontains=search)
+            )
 
-        # 3. Payment is not complete
-        orders = pending_active_orders.filter(amount_paid__lt=F('total_cost'))
-        print(f"Final orders (payment incomplete): {orders.count()}")
+        if payment_method:
+            orders = orders.filter(payment_method=payment_method)
+        if start_date:
+            orders = orders.filter(created_at__gte=start_date)
+        if end_date:
+            orders = orders.filter(created_at__lte=end_date)
 
-        # Print details of each order for debugging
-        for order in orders:
-            print(f"Order {order.order_id}: Type={order.delivery_type}, Active={order.is_active}, "
-                  f"Status={order.approval_status}, Paid={order.amount_paid}, Total={order.total_cost}")
-
-        return render(request, 'payment_confirmation.html', {
+        context = {
             'orders': orders,
             'payment_message': payment_message,
-            'payment_message_type': payment_message_type
-        })
+            'payment_message_type': payment_message_type,
+            'pending_count': orders.count(),
+            'total_amount': orders.aggregate(total=Sum('total_cost'))['total'] or Decimal('0.00'),
+            'gcash_count': orders.filter(payment_method='gcash').count(),
+            'credit_count': orders.filter(payment_method='credit').count(),
+            'cash_count': orders.filter(payment_method='cash').count(),
+        }
+        return render(request, 'payment_confirmation.html', context)
 
+    # ✅ Process specific order
     order = get_object_or_404(CustomerOrder, order_id=order_id)
 
     if request.method == "POST":
-        # Check if this is a payment processing request
         if request.POST.get('process_payment') == 'true':
             try:
                 amount = Decimal(request.POST.get('amount', '0'))
-                payment_method = request.POST.get('payment_method')
+                method = request.POST.get('payment_method')
                 notes = request.POST.get('notes', '')
 
-                # Validate amount
                 if amount <= 0:
                     request.session['payment_message'] = 'Payment amount must be greater than 0.'
                     request.session['payment_message_type'] = 'error'
                     return redirect('payment_confirmation', order_id=0)
 
-                # Update order with payment
-                current_amount_paid = order.amount_paid or Decimal('0')
-                order.amount_paid = current_amount_paid + amount
-                
-                # If payment is complete, approve the order
+                order.amount_paid = (order.amount_paid or Decimal('0')) + amount
+
                 if order.amount_paid >= order.total_cost:
                     order.approval_status = "confirmed"
-                    
-                    # For delivery orders, always set delivery_status to pending
                     if order.delivery_type.lower() == 'delivery':
                         order.delivery_status = 'pending'
-                        print(f"Debug - Set delivery status to pending for order {order.order_id}")
-                    
-                    # Handle stock deduction
-                    from .models import Stock
-                    stock_qs = Stock.objects.filter(rice_type=order.rice_type)
+
+                    stock = Stock.objects.filter(rice_type=order.rice_type)
                     if hasattr(order, 'packaging') and order.packaging:
-                        stock_qs = stock_qs.filter(packaging=order.packaging)
-                    stock = stock_qs.first()
+                        stock = stock.filter(packaging=order.packaging)
+                    stock = stock.first()
                     if stock and stock.current_stock >= order.quantity:
                         stock.stock_out += order.quantity
                         stock.save()
 
-                # Add payment method and notes if provided
-                if payment_method:
-                    order.payment_method = payment_method
+                if method:
+                    order.payment_method = method
                 if notes:
-                    order.notes = (order.notes or '') + f"\nPayment received: ₱{amount} via {payment_method}. {notes}"
+                    order.notes = (order.notes or '') + f"\nPayment received: ₱{amount} via {method}. {notes}"
 
                 order.save()
-                request.session['payment_message'] = f'Payment of ₱{amount} processed successfully.'
+
+                # ✅ Send confirmation email if possible
+                if order.customer and order.customer.email:
+                    try:
+                        # Get customer's full name
+                        customer_name = f"{order.customer.name.first_name} {order.customer.name.last_name}" if order.customer.name else "Valued Customer"
+                        
+                        send_mail(
+                            subject=f'[Dragon Ricemill] Payment Confirmation for Order #{order.order_id}',
+                            message=(
+                                f"Dear {customer_name},\n\n"
+                                f"Thank you for your recent order with Dragon Ricemill. We are pleased to confirm that we have received your payment for Order #{order.order_id}.\n\n"
+                                f"📦 Order Details:\n"
+                                f"• Rice Type: {order.rice_type}\n"
+                                f"• Quantity: {order.quantity} sack(s)\n"
+                                f"• Total Amount: ₱{order.total_cost:.2f}\n"
+                                f"• Amount Paid: ₱{order.amount_paid:.2f}\n"
+                                f"• Payment Method: {order.payment_method}\n\n"
+                                f"Your order is now being processed. You will receive a notification once your order is ready for delivery.\n\n"
+                                f"If you have any questions or concerns, feel free to contact us.\n\n"
+                                f"Best regards,\n"
+                                f"The Dragon Ricemill Team\n\n"
+                                f"📧 dragonricemill@gmail.com\n"
+                            ),
+                            from_email='dragonricemill@gmail.com',
+                            recipient_list=[order.customer.email],
+                            fail_silently=False
+                        )
+                    except Exception as e:
+                        # Log the full error for debugging
+                        print(f"Email error: {str(e)}")
+                        # Capture and display error message visibly
+                        request.session['payment_message'] = f"Payment processed but email notification failed: {str(e)}"
+                        request.session['payment_message_type'] = 'warning'
+                        return redirect('payment_confirmation', order_id=0)
+
+                request.session['payment_message'] = f"Payment of ₱{amount:.2f} processed successfully."
                 request.session['payment_message_type'] = 'success'
-                
-                # If this is a delivery order and payment is complete, redirect to delivery confirmation
+
                 if order.delivery_type.lower() == 'delivery' and order.amount_paid >= order.total_cost:
                     return redirect('delivery_confirmation', order_id=0)
                 return redirect('payment_confirmation', order_id=0)
 
-            except (InvalidOperation, ValueError) as e:
-                request.session['payment_message'] = f'Invalid payment amount: {str(e)}'
+            except (InvalidOperation, ValueError):
+                request.session['payment_message'] = 'Invalid payment amount.'
                 request.session['payment_message_type'] = 'error'
                 return redirect('payment_confirmation', order_id=0)
+
             except Exception as e:
-                request.session['payment_message'] = f'Error processing payment: {str(e)}'
+                request.session['payment_message'] = f"Unexpected error: {str(e)}"
                 request.session['payment_message_type'] = 'error'
                 return redirect('payment_confirmation', order_id=0)
 
-        # Regular order confirmation
-        if order.approval_status.lower() != "approved":
-            # Only allow confirmation if payment is complete
-            if order.amount_paid >= order.total_cost:
-                # Deduct stock and increment stock_out
-                from .models import Stock
-                # Try to match both rice_type and packaging (if available)
-                stock_qs = Stock.objects.filter(rice_type=order.rice_type)
-                if hasattr(order, 'packaging') and order.packaging:
-                    stock_qs = stock_qs.filter(packaging=order.packaging)
-                stock = stock_qs.first()
-                if stock and stock.current_stock >= order.quantity:
-                    stock.stock_out += order.quantity
-                    stock.save()  # current_stock auto-updates in model
-                # else: optionally handle not enough stock
-                order.approval_status = "confirmed"
-                order.is_active = True  # Ensure it is active
-                
-                # For delivery orders, set delivery_status to pending
-                if order.delivery_type.lower() == 'delivery':
-                    order.delivery_status = 'pending'
-                
-                order.save()
-                request.session['payment_message'] = 'Order has been confirmed successfully.'
-                request.session['payment_message_type'] = 'success'
-                
-                # If this is a delivery order, redirect to delivery confirmation
-                if order.delivery_type.lower() == 'delivery':
-                    return redirect('delivery_confirmation', order_id=0)
-                else:
-                    return redirect('allorder_history')
-            else:
-                request.session['payment_message'] = 'Order cannot be approved. Payment is incomplete.'
-                request.session['payment_message_type'] = 'error'
-                return redirect('payment_confirmation', order_id=0)
-        return redirect('allorder_history')
+        # ✅ Manual confirm
+        if order.amount_paid >= order.total_cost and order.approval_status.lower() != "approved":
+            order.approval_status = "confirmed"
+            order.is_active = True
+            if order.delivery_type.lower() == 'delivery':
+                order.delivery_status = 'pending'
 
-    # Only show the specific order if it meets our criteria
+            stock = Stock.objects.filter(rice_type=order.rice_type)
+            if hasattr(order, 'packaging') and order.packaging:
+                stock = stock.filter(packaging=order.packaging)
+            stock = stock.first()
+            if stock and stock.current_stock >= order.quantity:
+                stock.stock_out += order.quantity
+                stock.save()
+
+            order.save()
+
+            request.session['payment_message'] = 'Order confirmed.'
+            request.session['payment_message_type'] = 'success'
+
+            if order.delivery_type.lower() == 'delivery':
+                return redirect('delivery_confirmation', order_id=0)
+            return redirect('allorder_history')
+
+        request.session['payment_message'] = 'Cannot confirm. Incomplete payment.'
+        request.session['payment_message_type'] = 'error'
+        return redirect('payment_confirmation', order_id=0)
+
+    # ✅ GET request for unpaid
     if order.amount_paid >= order.total_cost:
         return render(request, 'payment_confirmation.html', {
             'orders': [],
-            'error_message': 'Order is not eligible for confirmation. Payment is already complete.',
+            'error_message': 'Order already fully paid.',
             'payment_message': payment_message,
             'payment_message_type': payment_message_type
         })
@@ -2830,7 +3169,11 @@ def payment_confirmation(request, order_id):
 
 
 from django.shortcuts import render, get_object_or_404
-from django.db.models import Q
+from django.db.models import F, Sum
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils import timezone
+import datetime
 
 def delivery_confirmation(request, order_id=None):
     orders = None
@@ -2860,8 +3203,40 @@ def delivery_confirmation(request, order_id=None):
                 order.save()
                 print(f"Debug - Successfully marked order {order_id} as delivered")
                 success_message = f"Order #{order.order_id} has been successfully confirmed for delivery!"
-            else:
-                error_message = f"Order is not eligible for delivery confirmation. Status: {order.delivery_status}, Approval: {order.approval_status}, Active: {order.is_active}"
+
+                # Send confirmation email after delivery confirmation
+                try:
+                    # Get customer's full name
+                    customer_name = f"{order.customer.name.first_name} {order.customer.name.last_name}" if order.customer.name else "Valued Customer"
+                    
+                    send_mail(
+                        subject=f'[Dragon Ricemill] Delivery Confirmation for Order #{order.order_id}',
+                        message=(
+                            f"Dear {customer_name},\n\n"
+                            f"We are pleased to inform you that your order #{order.order_id} has been successfully confirmed and is now on transit.\n\n"
+                            f"📦 Order Details:\n"
+                            f"• Rice Type: {order.rice_type}\n"
+                            f"• Quantity: {order.quantity} sack(s)\n"
+                            f"• Total Amount: ₱{order.total_cost:.2f}\n"
+                            f"• Amount Paid: ₱{order.amount_paid:.2f}\n"
+                            f"• Payment Method: {order.payment_method}\n\n"
+                            f"We hope you are satisfied with your purchase. If you have any questions or need assistance, please do not hesitate to contact us.\n\n"
+                            f"Thank you for choosing Dragon Ricemill!\n\n"
+                            f"Best regards,\n"
+                            f"The Dragon Ricemill Team\n\n"
+                            f"📧 dragonricemill@gmail.com\n"
+                        ),
+                        from_email='dragonricemill@gmail.com',
+                        recipient_list=[order.customer.email],
+                        fail_silently=False
+                    )
+                except Exception as e:
+                    # Log the full error for debugging
+                    print(f"Delivery email error: {str(e)}")
+                    error_message = f"Delivery confirmed but email notification failed: {str(e)}"
+                else:
+                    success_message = f"Order #{order.order_id} has been successfully confirmed for delivery!"
+
         except Exception as e:
             error_message = f"Failed to update order: {e}"
             print(f"Debug - Exception: {e}")
@@ -2878,7 +3253,6 @@ def delivery_confirmation(request, order_id=None):
 
         if order_id:
             orders = CustomerOrder.objects.filter(order_id=order_id, **base_query)
-            # Debug log for specific order query
             print(f"Debug - Searching for order {order_id}")
             specific_order = CustomerOrder.objects.get(order_id=order_id)
             print(f"- Found order: {specific_order}")
@@ -2887,7 +3261,6 @@ def delivery_confirmation(request, order_id=None):
             print(f"- Is Active: {specific_order.is_active}")
         else:
             orders = CustomerOrder.objects.filter(**base_query)
-            # Debug log for all orders query
             print(f"Debug - Total orders found: {orders.count()}")
             for order in orders:
                 print(f"Order {order.order_id}:")
@@ -2895,13 +3268,8 @@ def delivery_confirmation(request, order_id=None):
                 print(f"- Approval Status: {order.approval_status}")
                 print(f"- Is Active: {order.is_active}")
 
-        # Get counts for stats
-        from django.utils import timezone
-        from django.db.models import Sum
-        import datetime
-
         today = timezone.now().date()
-        
+
         pending_count = CustomerOrder.objects.filter(
             delivery_type='delivery',
             delivery_status__iexact='pending',
@@ -2945,6 +3313,7 @@ def delivery_confirmation(request, order_id=None):
         'completed_count': completed_count,
         'total_value': total_value,
     })
+
 
 @require_http_methods(["GET", "POST"])
 def edit_customer_view(request, user_id):
@@ -2994,8 +3363,11 @@ def cancel_order(request, order_id):
         # Log the cancellation
         log_user_action(request.session.get('user_id'), f'Cancelled order #{order_id}')
         
-        # Add success message
-        messages.success(request, f'Order #{order_id} has been cancelled successfully.')
+        # Store cancellation message in session instead of messages framework
+        request.session['order_message'] = {
+            'type': 'success',
+            'text': f'Order #{order_id} has been cancelled successfully.'
+        }
         
         # Redirect back to the appropriate page
         if request.META.get('HTTP_REFERER'):
@@ -3008,3 +3380,107 @@ def cancel_order(request, order_id):
     except Exception as e:
         messages.error(request, f'Error cancelling order: {str(e)}')
         return redirect('dashboard')
+
+def restore_rice(request, rice_id):
+    if request.method == 'POST':
+        rice = get_object_or_404(Rice, riceID=rice_id)
+        rice.is_active = True
+        rice.save()
+        messages.success(request, f'Rice type "{rice.rice_type}" has been restored.')
+        return redirect('archive')
+    return redirect('archive')
+
+def permanent_delete_rice(request, rice_id):
+    if request.method == 'POST':
+        rice = get_object_or_404(Rice, riceID=rice_id)
+        rice_name = rice.rice_type
+        rice.delete()
+        messages.success(request, f'Rice type "{rice_name}" has been permanently deleted.')
+        return redirect('archive')
+    return redirect('archive')
+
+from django.http import JsonResponse
+from django.db.models import Q, F, Sum
+from datetime import datetime
+from django.utils.timezone import make_aware
+from .models import CustomerOrder, Rice
+from django.core.serializers.json import DjangoJSONEncoder
+
+def get_filtered_orders(request):
+    try:
+        # Get filter parameters
+        date_from = request.GET.get('date_from')
+        date_to = request.GET.get('date_to')
+        customer_search = request.GET.get('customer')
+        rice_type = request.GET.get('rice_type')
+        payment_status = request.GET.get('payment_status')
+        delivery_status = request.GET.get('delivery_status')
+
+        # Start with all orders
+        orders = CustomerOrder.objects.select_related(
+            'customer', 
+            'customer__name',
+            'rice_type'
+        ).order_by('-created_at')
+
+        # Apply filters
+        if date_from:
+            try:
+                date_from = make_aware(datetime.strptime(date_from, '%Y-%m-%d'))
+                orders = orders.filter(created_at__date__gte=date_from.date())
+            except ValueError:
+                pass
+
+        if date_to:
+            try:
+                date_to = make_aware(datetime.strptime(date_to, '%Y-%m-%d'))
+                orders = orders.filter(created_at__date__lte=date_to.date())
+            except ValueError:
+                pass
+
+        if customer_search:
+            orders = orders.filter(
+                Q(customer__name__first_name__icontains=customer_search) |
+                Q(customer__name__last_name__icontains=customer_search)
+            )
+
+        if rice_type:
+            orders = orders.filter(rice_type__rice_type=rice_type)
+
+        if payment_status:
+            if payment_status == 'paid':
+                orders = orders.filter(amount_paid__gte=F('total_cost'))
+            elif payment_status == 'partial':
+                orders = orders.filter(amount_paid__gt=0, amount_paid__lt=F('total_cost'))
+            elif payment_status == 'unpaid':
+                orders = orders.filter(amount_paid=0)
+
+        if delivery_status:
+            orders = orders.filter(delivery_status__iexact=delivery_status)
+
+        # Convert orders to list of dictionaries
+        orders_data = []
+        for order in orders:
+            orders_data.append({
+                'order_id': order.order_id,
+                'reference_code': order.reference_code,
+                'customer_name': f"{order.customer.name.first_name} {order.customer.name.last_name}",
+                'payment_method': order.payment_method,
+                'rice_type': order.rice_type.rice_type,
+                'quantity': order.quantity,
+                'total_cost': str(order.total_cost),
+                'amount_paid': str(order.amount_paid),
+                'delivery_status': order.delivery_status,
+                'created_at': order.created_at.isoformat(),
+                'is_cancelled': order.delivery_status.lower() == 'cancelled'
+            })
+
+        return JsonResponse({
+            'status': 'success',
+            'orders': orders_data
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
