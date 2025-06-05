@@ -1047,7 +1047,7 @@ def inventory_turnover(request):
     summary_stats = {
         'total_sales': Decimal('0.00'),
         'total_quantity': 0,
-        'avg_turnover': 0,
+        'avg_turnover': Decimal('0.00'),
         'total_beginning_stock': 0,
         'total_ending_stock': 0
     }
@@ -1152,13 +1152,10 @@ def inventory_turnover(request):
                     summary_stats['total_beginning_stock'] += beginning_balance
                     summary_stats['total_ending_stock'] += ending_balance
 
-            # Calculate average turnover ratio only for items with actual turnover
-            active_items = [item for item in turnover_data if item['inventory_turnover_ratio'] > 0]
-            if active_items:
-                summary_stats['avg_turnover'] = round(
-                    sum(item['inventory_turnover_ratio'] for item in active_items) / len(active_items),
-                    2
-                )
+            # Calculate average turnover ratio for all items
+            if turnover_data:
+                total_turnover = sum(item['inventory_turnover_ratio'] for item in turnover_data)
+                summary_stats['avg_turnover'] = round(total_turnover / len(turnover_data), 2)
 
     except ValueError as e:
         # Handle date parsing errors
@@ -3397,6 +3394,7 @@ def edit_customer_view(request, user_id):
         
         # Update customer
         customer.Customer_Mobile_Number = request.POST.get('customer_mobile_number')
+        customer.email = request.POST.get('email')  # Add email update
         customer.save()
         
         messages.success(request, 'Customer updated successfully.')

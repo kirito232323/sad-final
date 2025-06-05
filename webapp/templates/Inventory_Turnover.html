@@ -506,17 +506,31 @@
 
         // Form validation
         form.addEventListener('submit', (e) => {
+            e.preventDefault(); // Prevent default submission
+            
             if (!validateDates(startMonth.value, endMonth.value)) {
-                e.preventDefault();
+                return;
             }
+            
+            // If validation passes, submit the form
+            form.submit();
         });
 
         // Auto-submit on rice type change
-        riceType.addEventListener('change', () => form.submit());
+        riceType.addEventListener('change', () => {
+            if (validateDates(startMonth.value, endMonth.value)) {
+                form.submit();
+            }
+        });
 
         // Update constraints on date change
         [startMonth, endMonth].forEach(input => {
-            input.addEventListener('change', () => updateDateConstraints(startMonth, endMonth));
+            input.addEventListener('change', () => {
+                updateDateConstraints(startMonth, endMonth);
+                if (validateDates(startMonth.value, endMonth.value)) {
+                    form.submit();
+                }
+            });
         });
     }
 
@@ -542,12 +556,31 @@
             return false;
         }
 
+        // Check if date range is more than 12 months
+        const diffMonths = (endDate.getFullYear() - startDate.getFullYear()) * 12 + 
+                          (endDate.getMonth() - startDate.getMonth());
+        if (diffMonths > 12) {
+            showToast('Date range cannot exceed 12 months', 'error');
+            return false;
+        }
+
         return true;
     }
 
     function updateDateConstraints(startMonth, endMonth) {
-        endMonth.min = startMonth.value;
+        if (!startMonth.value || !endMonth.value) return;
+
+        const startDate = new Date(startMonth.value + '-01');
+        const endDate = new Date(endMonth.value + '-01');
+
+        // Update min/max constraints
         startMonth.max = endMonth.value;
+        endMonth.min = startMonth.value;
+
+        // If start date is after end date, update end date
+        if (startDate > endDate) {
+            endMonth.value = startMonth.value;
+        }
     }
 
     function initializeTable() {
